@@ -1,0 +1,21 @@
+{
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.6.0",
+    "@truffle/hdwallet-provider": "^2.0.9",
+    "chai": "^4.3.6",
+    "chai-as-promised": "^7.1.1",
+    "chai-bn": "^0.3.1",
+    "chai-bytes": "^0.1.2",
+    "dotenv": "^16.0.1",
+    "json-rpc-engine": "^6.1.0",
+    "keccak256": "^1.0.6",
+    "merkletreejs": "^0.2.31",
+    "solc": "^0.8.13",
+    "truffle": "^5.5.18",
+    "truffle-contract-size": "^2.0.1"
+  },
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.15",
+    "truffle-plugin-verify": "^0.5.25"
+  }
+}
