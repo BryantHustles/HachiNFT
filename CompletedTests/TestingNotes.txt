@@ -1,5 +1,7 @@
 1. When minting, if an amounts array is given that is empty, "[]" the function mints to the address given using an empty amounts and token ID Array.
     Users would be sending money but should not receive any tokens
 
+    Resolved with require statement
+
 2.Another account can mint to an address that is already at the mint limit. (Address mint count is based on who sent transaction)
     Not sure this matters becasue it would be the same if someone had another account, purchased the nft's then trnsferred to another account of theirs. Just removes the transfer step.

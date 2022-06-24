@@ -87,6 +87,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
         address _signer = verifySigner(_ticket);
         require(msg.sender == _signer, "Verification Failed");
         uint _length = _ticket.amounts.length;
+        require(_length > 0, "Invalid Amounts Input");
         uint[] memory _tokenId = _ticket.amounts;
 
         require(tokenIndex + _length <= mintLimit, "Sold Out");
