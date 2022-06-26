@@ -56,10 +56,324 @@ contract("HACHI NFT", async(accounts) => {
 
     before(async() => {
         instance = await HachiToken.deployed();
-        await instance.unpause();
     });
 
+    context("Public Mint False Pause True", async() => {
+
+        context("Minting", async() => {
+
+            it("Deployer cannot mint", async() => {
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = deployerAccount;
+                HachiTicket.amounts = [1,1,1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(deployerAccount));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[0],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                await expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: deployerAccount, value: weiToSend})).to.eventually.be.rejected
+            });
+
+            it("Account 2 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account2;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account2));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[1],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account2, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 3 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account3;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account3));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[2],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account3, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 4 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account4;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account4));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[3],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account4, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 5 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account5;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account5));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[4],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account5, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 6 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account6;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account6));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[5],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account6, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 7 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account7;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account7));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[6],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account7, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 8 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account8;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account8));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[7],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account8, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 9 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account9;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account9));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[8],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account9, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 10 cannot mint", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account10;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account10));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[9],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.true;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account10, value: weiToSend})).to.eventually.be.rejected;
+            });
+        })
+
+        context("Transfers", async() => {
+
+            it("Cannot Transfer with 0 balance - Account: Deployer Token: 0")
+        })
+
+    })
+
     context("Public Mint False Pause False", async() => {
+
+        before(async() => {
+            await instance.unpause();
+        });
 
         context("Using Deployer Account", async() => {
 
@@ -1016,49 +1330,215 @@ contract("HACHI NFT", async(accounts) => {
                 return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account10, value: weiToSend})).to.eventually.be.fulfilled;
             });
 
+            it("Account 6 can mint more (2).", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account6;
+                HachiTicket.amounts = [1,1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account6));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[5],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.false;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account6, value: weiToSend})).to.eventually.be.fulfilled;
+            });
+
+            it("Account 7 can mint more (1).", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account7;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account7));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[6],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.false;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account7, value: weiToSend})).to.eventually.be.fulfilled;
+            });
+
+            it("Account 8 cannot mint more (1).", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account8;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account8));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[7],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.false;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account8, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 9 can mint more (1).", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account9;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account9));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[8],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.false;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account9, value: weiToSend})).to.eventually.be.fulfilled;
+            });
+
+            it("Account 10 can mint more (2).", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account10;
+                HachiTicket.amounts = [1,1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account10));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[9],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.false;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account10, value: weiToSend})).to.eventually.be.fulfilled;
+            });
+
+            it("Account 6 cannot mint more (1).", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account6;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account6));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[5],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.false;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account6, value: weiToSend})).to.eventually.be.rejected;
+            });
+
+            it("Account 10 cannot mint more (1).", async() => {
+
+                //Set struct data
+                domainData.verifyingContract = instance.address;
+                HachiTicket.to = Account10;
+                HachiTicket.amounts = [1];
+                HachiTicket.merkleProof = merkleTree.getHexProof(keccak256(Account10));
+
+                let data = {
+                    types: {
+                        EIP712Domain: domain,
+                        HachiTicket: ticket,
+                    },
+                    primaryType: "HachiTicket",
+                    domain: domainData,
+                    message: HachiTicket
+                }
+
+                //Get Signature
+                let sig = ethSigUtil.signTypedData_v4(Buffer.from(keys[9],"hex"), {data});
+
+                //Determine wei to Send
+                const mintPrice = await instance.mintPrice()
+                let weiToSend = mintPrice*HachiTicket.amounts.length
+
+                //Mint
+                expect(instance.paused()).to.eventually.be.false;
+                return expect(instance.mintHachi([HachiTicket.to,HachiTicket.amounts,HachiTicket.merkleProof,sig],{from: Account10, value: weiToSend})).to.eventually.be.rejected;
+            });
         })
     });
-
-        
-
-    
 });
-
-
-
-
-/*
-context('when unpaused', function () {
-
-    it("", async function () {
-
-    });
-    
-    it('can perform normal process in non-pause', async function () {
-        let instance = await HachiToken.deployed();
-      expect(await instance.()).to.be.bignumber.equal('0');
-
-      await this.pausable.normalProcess();
-      expect(await this.pausable.count()).to.be.bignumber.equal('1');
-    });
-
-    it('cannot take drastic measure in non-pause', async function () {
-      await expectRevert(this.pausable.drasticMeasure(),
-        'Pausable: not paused',
-      );
-      expect(await this.pausable.drasticMeasureTaken()).to.equal(false);
-    });
-
-it("Public mint should be false", async() => {
-        let instance = await HachiToken.deployed();
-        await expect(instance.publicMint()).to.eventually.be.false;
-    })
-
-    describe('Minting', async() => {
-
-    })
-
-    describe('Transferring', async() => {
-
-    })
-    */
