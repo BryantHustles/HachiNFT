@@ -2058,15 +2058,15 @@ contract("HACHI NFT", async(accounts) => {
     });
 
     describe("Post-Mint Tests", async() => {
+        
         context("Public Mint False Pause True", async() => {
-
             before(async() => {
                 await instance.updatePublicMint(false);
                 await instance.pause();
             });
 
             describe("Checking State", async() => {
-                it("Paused True", async() => {
+                it("Paused False", async() => {
                     return expect(instance.paused()).to.eventually.be.true;
                 });
                 
@@ -2075,55 +2075,168 @@ contract("HACHI NFT", async(accounts) => {
                 });
             });
 
-            context("Single Transfers - Should not be able to Transfer while paused.", async() => {
-                it("Cannot Transfer Token 1: From: Deployer To: Account2", async() => {
-                    return  expect(instance.safeTransferFrom(deployerAccount,Account2,1,1,"",{from: deployerAccount})).to.eventually.be.rejected;
+            context("Can transfer during pause", async() => {
+
+                context("Transactions that should be rejected.", async() => {
+
+                    context("Single Transfers.", async() => {
+
+                        it("Cannot Transfer Token Account does not have - Token: 7 From: Deployer To: Account2", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,Account2,7,1,[],{from: deployerAccount})).to.eventually.be.rejected;
+                        });
+
+                        it("Cannot Transfer quantity greater than 0 - Token: 1 From: Deployer To: Account2", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,Account2,1,2,[],{from: deployerAccount})).to.eventually.be.rejected;
+                        });
+
+                        it("Cannot Transfer for another account by default - Token: 1 From: Deployer To: Account2 Transferred by Account3", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,Account2,1,1,[],{from: Account3})).to.eventually.be.rejected;
+                        });
+
+                        it("Cannot Transfer from another account to own wallet - Token: 1 From: Deployer To: Account2 Transferred by Account3", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,Account2,1,1,[],{from: Account2})).to.eventually.be.rejected;
+                        });
+
+                    });
+
+                    context("Batch Transfers.", async() => {
+
+                        it("Cannot Transfer Token Account does not have - Token: [7,8,9] From: Deployer To: Account2", async() => {
+                            return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[7,8,9],[1,1,1],[],{from: deployerAccount})).to.eventually.be.rejected;
+                        });
+
+                        it("Cannot Transfer quantity greater than 0 - Token: [1,2,3] From: Deployer To: Account2", async() => {
+                            return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[1,2,3],[2,3,4],[],{from: deployerAccount})).to.eventually.be.rejected;
+                        });
+
+                        it("Cannot Transfer where 1 quantity greater than 0 - Token: [1,2,3] From: Deployer To: Account2", async() => {
+                            return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[1,2,3],[1,3,1],[],{from: deployerAccount})).to.eventually.be.rejected;
+                        });
+
+                        it("Cannot Transfer for another account by default - Token: [1,2,3] From: Deployer To: Account2 Transferred by Account3", async() => {
+                            return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[1,2,3],[1,1,1],[],{from: Account3})).to.eventually.be.rejected;
+                        });
+
+                        it("Cannot Transfer from another account to own wallet - Token: [1,2,3] From: Deployer To: Account2 Transferred by Account3", async() => {
+                            return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[1,2,3],[1,1,1],[],{from: Account2})).to.eventually.be.rejected;
+                        });
+                    });
                 });
 
-                it("Cannot Transfer Token 2: From: Deployer To: Account3", async() => {
-                    return  expect(instance.safeTransferFrom(deployerAccount,Account3,2,1,"",{from: deployerAccount})).to.eventually.be.rejected;
-                });
+                context("Transactions that should succeed", async() => {
 
-                it("Cannot Transfer Token 3: From: Deployer To: Account4", async() => {
-                    return  expect(instance.safeTransferFrom(deployerAccount,Account4,3,1,"",{from: deployerAccount})).to.eventually.be.rejected;
-                });
+                    context("Single Transfers.", async() => {
+                        it("Can Transfer Token to self - Token: 1 From: Deployer To: Deployer", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,deployerAccount,1,1,[],{from: deployerAccount})).to.eventually.be.fulfilled;
+                        });
 
-                it("Cannot Transfer Token 7: From: Account2 To: Account5", async() => {
-                    return  expect(instance.safeTransferFrom(Account2,Account5,7,1,"",{from: Account2})).to.eventually.be.rejected;
-                });
+                        it("Can Transfer quantity of 0 - Token: 1 From: Deployer To: Account2", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,Account2,1,0,[],{from: deployerAccount})).to.eventually.be.fulfilled;
+                        });
 
-                it("Cannot Transfer Token 9: From: Account4 To: Account2", async() => {
-                    return  expect(instance.safeTransferFrom(Account4,Account2,9,1,"",{from: Account4})).to.eventually.be.rejected;
-                });
+                        it("Transfer Token 1: From: Deployer To: Account2", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,Account2,1,1,[],{from: deployerAccount})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Token 2: From: Deployer To: Account3", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,Account3,2,1,[],{from: deployerAccount})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Token 3: From: Deployer To: Account4", async() => {
+                            return  expect(instance.safeTransferFrom(deployerAccount,Account4,3,1,[],{from: deployerAccount})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Token 7: From: Account3 To: Account5", async() => {
+                            return  expect(instance.safeTransferFrom(Account3,Account5,7,1,[],{from: Account3})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Token 9: From: Account4 To: Account2", async() => {
+                            return  expect(instance.safeTransferFrom(Account4,Account2,9,1,[],{from: Account4})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Token 11: From: Account5 To: Account2", async() => {
+                            return  expect(instance.safeTransferFrom(Account5,Account2,11,1,[],{from: Account5})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Token 16: From: Account6 To: Account4", async() => {
+                            return  expect(instance.safeTransferFrom(Account6,Account4,16,1,[],{from: Account6})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Token 20: From: Account8 To: Account5", async() => {
+                            return  expect(instance.safeTransferFrom(Account8,Account5,20,1,[],{from: Account8})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Token 24: From: Account10 To: Account7", async() => {
+                            return  expect(instance.safeTransferFrom(Account10,Account7,24,1,[],{from: Account10})).to.eventually.be.fulfilled;
+                        });
+                    });
+        
+                    context("Batch Transfers.", async() => {
 
-                it("Cannot Transfer Token 11: From: Account5 To: Account2", async() => {
-                    return  expect(instance.safeTransferFrom(Account5,Account2,11,1,"",{from: Account5})).to.eventually.be.rejected;
-                });
+                        it("Can Transfer Token to self - Token: [4,5,6] From: Deployer To: Deployer", async() => {
+                            return  expect(instance.safeBatchTransferFrom(deployerAccount,deployerAccount,[4,5,6],[1,1,1],[],{from: deployerAccount})).to.eventually.be.fulfilled;
+                        });
 
-                it("Cannot Transfer Token 16: From: Account6 To: Account4", async() => {
-                    return  expect(instance.safeTransferFrom(Account6,Account4,16,1,"",{from: Account6})).to.eventually.be.rejected;
-                });
+                        it("Can Transfer quantity of 0 - Token: [4,5] From: Deployer To: Account2", async() => {
+                            return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[4,5],[0,0],[],{from: deployerAccount})).to.eventually.be.fulfilled;
+                        });
 
-                it("Cannot Transfer Token 20: From: Account8 To: Account5", async() => {
-                    return  expect(instance.safeTransferFrom(Account8,Account5,20,1,"",{from: Account8})).to.eventually.be.rejected;
-                });
+                        it("Can Transfer where one quantity is 0 - Token: [22,23] From: Deployer To: Account3", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account9,Account10,[22,23],[0,1],[],{from: Account9})).to.eventually.be.fulfilled;
+                        });
+                        
+                        it("Transfer Tokens: [4,5,6] From: deployer To: Account2", async() => {
+                            return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[4,5,6],[1,1,1],[],{from: deployerAccount})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [9,11] From: Account2 To: Account10", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account2,Account10,[9,11],[1,1],[],{from: Account2})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [2,14] From: Account3 To: deployer", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account3,deployerAccount,[2,14],[1,1],[],{from: Account3})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [3,8,15] From: Account4 To: Account3", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account4,Account3,[3,8,15],[1,1,1],[],{from: Account4})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [10,20] From: Account5 To: Account4", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account5,Account4,[10,20],[1,1],[],{from: Account5})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [25] From: Account6 To: Account5", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account6,Account5,[25],[1],[],{from: Account6})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [17,18,24,27] From: Account7 To: Account6", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account7,Account6,[17,18,24,27],[1,1,1,1],[],{from: Account7})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [19,21] From: Account8 To: Account7", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account8,Account7,[19,21],[1,1],[],{from: Account8})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [22,28] From: Account9 To: Account8", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account9,Account8,[22,28],[1,1],[],{from: Account9})).to.eventually.be.fulfilled;
+                        });
+        
+                        it("Transfer Tokens: [29,30,11] From: Account10 To: Account9", async() => {
+                            return  expect(instance.safeBatchTransferFrom(Account10,Account9,[29,30,11],[1,1,1],[],{from: Account10})).to.eventually.be.fulfilled;
+                        });
+                    });
 
-                it("Cannot Transfer Token 24: From: Account10 To: Account7", async() => {
-                    return  expect(instance.safeTransferFrom(Account10,Account7,24,1,"",{from: Account10})).to.eventually.be.rejected;
-                });
-            });
+                    context("Check balances.", async() => {
 
-            context("Batch Transfers - Should not be able to Transfer while paused.", async() => {
-                
-                it("Cannot Transfer Tokens: [1,2,3] From: deployer To: Account2", async() => {
-                    return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[1,2,3],[1,1,1],"",{from: deployerAccount})).to.eventually.be.rejected;
+                    });
                 });
             });
         });
 
         context("Public Mint False Pause False", async() => {
+
             before(async() => {
-                await instance.unpause();
+                await instance.unpause();    
             });
 
             describe("Checking State", async() => {
@@ -2136,13 +2249,86 @@ contract("HACHI NFT", async(accounts) => {
                 });
             });
 
-            context("Single Transfers - Should not be able to Transfer while paused.", async() => {
+        //     context("Single Transfers - Should not be able to Transfer while paused.", async() => {
+        //         it("Cannot Transfer Token 1: From: Deployer To: Account2", async() => {
+        //             return  expect(instance.safeTransferFrom(deployerAccount,Account2,1,1,[],{from: deployerAccount})).to.eventually.be.rejected;
+        //         });
 
-            });
+        //         it("Cannot Transfer Token 2: From: Deployer To: Account3", async() => {
+        //             return  expect(instance.safeTransferFrom(deployerAccount,Account3,2,1,[],{from: deployerAccount})).to.eventually.be.rejected;
+        //         });
 
-            context("Batch Transfers - Should not be able to Transfer while paused.", async() => {
+        //         it("Cannot Transfer Token 3: From: Deployer To: Account4", async() => {
+        //             return  expect(instance.safeTransferFrom(deployerAccount,Account4,3,1,[],{from: deployerAccount})).to.eventually.be.rejected;
+        //         });
 
-            });
+        //         it("Cannot Transfer Token 7: From: Account3 To: Account5", async() => {
+        //             return  expect(instance.safeTransferFrom(Account3,Account5,7,1,[],{from: Account3})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Token 9: From: Account4 To: Account2", async() => {
+        //             return  expect(instance.safeTransferFrom(Account4,Account2,9,1,[],{from: Account4})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Token 11: From: Account5 To: Account2", async() => {
+        //             return  expect(instance.safeTransferFrom(Account5,Account2,11,1,[],{from: Account5})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Token 16: From: Account6 To: Account4", async() => {
+        //             return  expect(instance.safeTransferFrom(Account6,Account4,16,1,[],{from: Account6})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Token 20: From: Account8 To: Account5", async() => {
+        //             return  expect(instance.safeTransferFrom(Account8,Account5,20,1,[],{from: Account8})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Token 24: From: Account10 To: Account7", async() => {
+        //             return  expect(instance.safeTransferFrom(Account10,Account7,24,1,[],{from: Account10})).to.eventually.be.rejected;
+        //         });
+        //     });
+
+        //     context("Batch Transfers - Should not be able to Transfer while paused.", async() => {
+                
+        //         it("Cannot Transfer Tokens: [4,5,6] From: deployer To: Account2", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(deployerAccount,Account2,[4,5,6],[1,1,1],[],{from: deployerAccount})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [9,11] From: Account2 To: Account10", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account2,Account10,[9,11],[1,1],[],{from: Account2})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [2,14] From: Account3 To: deployer", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account3,deployerAccount,[2,14],[1,1],[],{from: Account3})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [3,8,15] From: Account4 To: Account3", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account4,Account3,[3,8,15],[1,1,1],[],{from: Account4})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [10,20] From: Account5 To: Account4", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account5,Account4,[10,20],[1,1],[],{from: Account5})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [25] From: Account6 To: Account5", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account6,Account5,[25],[1],[],{from: Account6})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [17,18,24,27] From: Account7 To: Account6", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account7,Account6,[17,18,24,27],[1,1,1,1],[],{from: Account7})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [19,20] From: Account8 To: Account7", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account8,Account7,[19,20],[1,1],[],{from: Account8})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [22,28] From: Account9 To: Account8", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account9,Account8,[22,28],[1,1],[],{from: Account9})).to.eventually.be.rejected;
+        //         });
+
+        //         it("Cannot Transfer Tokens: [29,30,11] From: Account10 To: Account9", async() => {
+        //             return  expect(instance.safeBatchTransferFrom(Account10,Account9,[29,30,11],[1,1,1],[],{from: Account10})).to.eventually.be.rejected;
+        //         });
+            // });
         });
     });
 });
