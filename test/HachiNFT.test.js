@@ -2403,5 +2403,74 @@ contract("HACHI NFT", async(accounts) => {
             });
 
         });
+
+        describe("Accounts can check balances of other accounts", async() => {
+
+            before(async() => {
+                one = new BN("1")
+            })
+
+            it("Check deployer balance", async() => {
+                let balance = await instance.balanceOfBatch([deployerAccount,deployerAccount],[2,8],{from: Account2});
+                for (const quant of balance) {
+                    expect(quant).to.be.a.bignumber.equal(one);
+                };
+                return 
+            });
+
+            it("Check Account2 balance", async() => {
+                let balance = await instance.balanceOfBatch([Account2,Account2],[1,10],{from: Account4});
+                for (const quant of balance) {
+                    expect(quant).to.be.a.bignumber.equal(one);
+                };
+                return 
+            });
+
+            it("Check Account3 balance", async() => {
+                let balance = await instance.balanceOfBatch([Account3,Account3,Account3],[3,13,15],{from: Account6});
+                for (const quant of balance) {
+                    expect(quant).to.be.a.bignumber.equal(one);
+                };
+                return
+            });
+
+            it("Check Account4 balance", async() => {
+                let balance = await instance.balanceOfBatch([Account4,Account4,Account4,Account4,Account4,Account4,Account4],[5,6,9,16,19,23,27],{from: Account9})
+                for (const quant of balance) {
+                    expect(quant).to.be.a.bignumber.equal(one);
+                };
+                return
+            });
+
+            it("Check Account5 balance", async() => {
+                let balance = await instance.balanceOfBatch([Account5,Account5,Account5,Account5,Account5],[4,7,12,20,25],{from: Account8})
+                for (const quant of balance) {
+                    expect(quant).to.be.a.bignumber.equal(one);
+                };
+                return
+            });
+
+            it("Check Account6 balance", async() => {
+                let balance = await instance.balanceOfBatch([Account6,Account6,Account6,Account6,Account6,Account6],[17,18,24,26,30,28],{from: Account8})
+                for (const quant of balance) {
+                    expect(quant).to.be.a.bignumber.equal(one);
+                };
+                return
+            });
+
+            it("Check Account7 balance", async() => {
+                let balance = await instance.balanceOf(Account7,21,{from: Account10});
+                return expect(balance).to.be.a.bignumber.equal(new BN("1"));
+            });
+
+            it("Check Account8 balance", async() => {
+                let balance = await instance.balanceOfBatch([Account8,Account8,Account8,Account8],[14,22,11,29],{from: Account8})
+                for (const quant of balance) {
+                    expect(quant).to.be.a.bignumber.equal(one);
+                };
+                return
+            });
+
+        });
     });
 });
