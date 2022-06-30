@@ -5,3 +5,7 @@
 
 2.Another account can mint to an address that is already at the mint limit. (Address mint count is based on who sent transaction)
     Not sure this matters becasue it would be the same if someone had another account, purchased the nft's then trnsferred to another account of theirs. Just removes the transfer step.
+
+3. Can transfer a zero quantity and state remains unchanged
+4. Can tansfer to self To and From are the same
+    - Need to check quantities is still correct
