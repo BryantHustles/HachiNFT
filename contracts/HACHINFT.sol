@@ -157,6 +157,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     }
 
     function updatePublicMint(bool _publicMint) public onlyOwner {
+        require(_publicMint != publicMint,"input eqaul to state");
         publicMint = _publicMint;
     }
 
