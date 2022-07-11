@@ -3,8 +3,11 @@ import Token from "./contracts/HACHINFT";
 import Wallet from "./contracts/HachiWallet"
 import Whitelist from "./contracts/HachiWhitelist"
 import getWeb3 from "./getWeb3";
-
 import "./App.css";
+import treeJSON from "./Whitelist/merkleTree.json"
+
+const readMerkleTree = require("./Whitelist/ReadMerkleTree");
+const keccak256 = require("keccak256");
 
 class App extends Component {
   state = { 
@@ -54,9 +57,12 @@ class App extends Component {
         Whitelist.networks[this.networkId] && Whitelist.networks[this.networkId].address,
       );
 
+      this.merkleTree = readMerkleTree(treeJSON);
+
       //Example listener
       //this.listenToTokenTransfer()
       this.setState({loaded:true},this.refreshStateData);
+      
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(

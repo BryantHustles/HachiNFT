@@ -3,7 +3,7 @@ const HachiToken = artifacts.require("HACHINFT");
 const keccak256 = require("keccak256");
 const { default: MerkleTree } = require("merkletreejs");
 const ethSigUtil = require('eth-sig-util');
-const chai = require("./setupchai.js");
+const chai = require("../setupchai.js");
 const BN = web3.utils.BN;
 const expect = chai.expect;
 
