@@ -1,7 +1,7 @@
 const HachiWallet = artifacts.require("HACHIWallet");
 
 const { balance } = require("@openzeppelin/test-helpers");
-const chai = require("./setupchai.js.js");
+const chai = require("./setupchai.js.js.js");
 const BN = web3.utils.BN;
 const expect = chai.expect;
 

@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.11;
 
-// import "./HACHILibrary.sol";
-// import "./HACHIVerifySigner.sol";
 import "./HACHIWhitelist.sol";
 import "./HACHIWallet.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
@@ -17,10 +15,11 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 //HachiNFT
 contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuard {
-    string private hachiGenericMetaDataURI = "ipfs://QmQ6tZha8rMRE1SjdfjWGDZiUrzPcRfxxESDHuQABbZDS8?";
+    string private hachiGenericMetaDataURI = "https://ipfs.io/ipfs/QmTYYoDsJ4mRefXffUGCK8SpGSjeeysgYFqq1RM2fQvpXp?filename=GenricMetaData.json";
     string private hachiIPFSMetaDataURI;
     string private constant SIGNING_DOMAIN = "HachiNftSig";
     string private constant SIGNATURE_VERSION = "1";
+    string public contractURI = "https://ipfs.io/ipfs/QmRdnAsPufkt2nVACMud5yi7dTGvHiwi9h24N5uX3urfiu?filename=HachiContractTest.json";
 
     bool public metaDataReveal;
     bool public publicMint;
@@ -63,10 +62,6 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
         payable(wllt).transfer(msg.value);
     }
 
-    function contractURI() public pure returns (string memory) {
-        return "https://ipfs.io/ipfs/QmX8w2EPzFhb5uZ9j87V5nVPVV6To1bNLcEKZJry6NzsHb?filename=HachiContractURI.json";
-    }
-
     function uri(uint256 tokenId) override public view returns (string memory) {
 
         if (!metaDataReveal)
@@ -79,8 +74,12 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
         hachiGenericMetaDataURI = sampleURI;
     }
 
-    function setMetaDataReveal(bool _reveal) public onlyOwner {
-        metaDataReveal = _reveal;
+    function revealMetaData() public onlyOwner {
+        metaDataReveal = true;
+    }
+
+      function setURI(string memory _newuri) public onlyOwner {
+        hachiIPFSMetaDataURI = _newuri;
     }
 
     function mintHachi(HachiTicket calldata _ticket) public whenNotPaused nonReentrant payable  {
@@ -150,10 +149,6 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
 
     function updateAddressMintLimit(uint _limit) public onlyOwner {
         addressMintLimit = _limit;
-    }
-
-    function setURI(string memory newuri) public onlyOwner {
-        _setURI(newuri);
     }
 
     function updatePublicMint(bool _publicMint) public onlyOwner {
