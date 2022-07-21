@@ -6,10 +6,14 @@ import getWeb3 from "./getWeb3";
 import { ethers } from "ethers";
 import "./App.css";
 import treeJSON from "./Whitelist/merkleTree.json"
+import Cookies from 'universal-cookie';
 
+//Cookies
+const cookies = new Cookies();
+
+//Merkle Tree
 const readMerkleTree = require("./Whitelist/ReadMerkleTree");
 const keccak256 = require("keccak256");
-// const ethSigUtil = require('eth-sig-util');
 
 class App extends Component {
   state = { 
@@ -46,17 +50,31 @@ class App extends Component {
     defualtRoyalty: null,
     defualtUri: "",
     MetaUri: "",
-    newOwner: "",
+    newOwnerNFT: "",
+    newOwnerWhitelist: "",
+    newOwnerWallet: "",
     merkleRoot: "",
     whitelistOwner: "",
-    newMerkleRoot: ""
+    newMerkleRoot: "",
+    walletOwner: "",
+    walletBalanceOwed: 0,
+    walletBalance: 0,
+    walletShares: 0,
+    walletReleased: 0,
+    WalletPayeeIndex: 0,
+    WalletReleasedToAddress: "",
+    WalletSharesAddress: "",
+    WalletPayeeAddress: "",
+    WalletReleasedTo: "",
+    WalletShares: 0,
+    releaseAddress: ""
   };
 
   componentDidMount = async () => {
     try {
       // Get network provider and web3 instance.
       this.web3 = await getWeb3();
-      this.networkId = await this.web3.eth.net.getId();
+      this.networkId = await this.web3.eth.net.getId()
 
       // Use web3 to get the user's accounts.
        this.accounts = await this.web3.eth.getAccounts();
@@ -110,10 +128,9 @@ class App extends Component {
       //Start listeners
       this.listenForAccountChanged();
       this.listenForChainChanged();
-      this.listenForPageLoad();
       
       //Set State
-      this.setState({loaded:true},this.refreshStateData,this.handleRefreshWhitelistinfo);
+      this.setState({loaded:true},this.handleOnLoad);
 
     } catch (error) {
       // Catch any errors for any of the above operations.
@@ -263,7 +280,7 @@ class App extends Component {
     await this.tokenInstance.methods.setURI(this.state.MetaUri).send({from: this.state.activeAddress});
   };
   handleTransferOwnership = async() => {
-    await this.tokenInstance.methods.transferOwnership(this.state.newOwner).send({from: this.state.activeAddress});
+    await this.tokenInstance.methods.transferOwnership(this.state.newOwnerNFT).send({from: this.state.activeAddress});
   };
   handleRenounceOwnership = async() => {
     await this.tokenInstance.methods.renounceOwnership().send({from: this.state.activeAddress});
@@ -325,7 +342,7 @@ class App extends Component {
       ownedTokenMap: null
     })
 
-    //Get tokens transferrred to Addreee
+    //Get tokens transferrred to Address
     await this.tokenInstance.getPastEvents('TransferBatch', {
       filter: {
         to: this.state.activeAddress
@@ -427,7 +444,7 @@ class App extends Component {
   //Whitelist Contract Read Functions
   //#############################################################
 
-  handleRefreshWhitelistinfo = async() => {
+  handleRefreshWhitelistInfo = async() => {
     let root = await this.whitelistInstance.methods.merkleRoot().call();
     let owner = await this.whitelistInstance.methods.owner().call();
 
@@ -442,8 +459,8 @@ class App extends Component {
   //#############################################################
 
   handleTransferOwnershipwhitelist = async() => {
-    await this.whitelistInstance.methods.transferOwnership(this.state.newOwner).send({from: this.state.activeAddress});
-    this.state.newOwner = ""
+    await this.whitelistInstance.methods.transferOwnership(this.state.newOwnerWhitelist).send({from: this.state.activeAddress});
+    this.state.newOwnerWhitelist = ""
   };
 
   handleRenounceOwnershipWhitelist = async() => {
@@ -453,16 +470,67 @@ class App extends Component {
   handleupdateMerkleRoot = async() => {
     await this.whitelistInstance.methods.setMerkleRoot(this.state.newMerkleRoot).send({from: this.state.activeAddress});
     this.state.newMerkleRoot = ""
-    await this.handleRefreshWhitelistinfo();
+    await this.handleRefreshWhitelistInfo();
   }
 
   //#############################################################
   //Wallet Contract Read Functions
   //#############################################################
 
+  handleRefreshWalletInfo = async() => {
+    let owner = await this.walletInstance.methods.owner().call();
+    let balance = this.web3.utils.fromWei(await this.web3.eth.getBalance(this.walletInstance._address),"ether");
+    let Shares = await this.walletInstance.methods.totalShares().call();
+    let released = this.web3.utils.fromWei(await this.walletInstance.methods.totalReleased().call(),"ether");
+    let balanceOwed = 0;
+    if (this.state.activeAddress != null && this.state.activeAddress !== "") {
+      balanceOwed = this.web3.utils.fromWei(await this.walletInstance.methods.viewBalanceOwed().call({from: this.state.activeAddress}),"ether");
+    };
+
+    this.setState({
+      walletOwner:owner,
+      walletBalance:balance,
+      walletBalanceOwed:balanceOwed,
+      walletShares:Shares,
+      walletReleased:released
+    });
+  };
+
+  handleGetPayee = async() => {
+    let payee = await this.walletInstance.methods.payee(this.state.WalletPayeeIndex-1).call()
+    this.setState({WalletPayeeAddress:payee})
+  };
+
+  handleReleasedTo = async() => {
+    let released = await this.walletInstance.methods.released(this.state.WalletReleasedToAddress).call()
+    this.setState({WalletReleasedTo:released})
+  };
+
+  handleGetShares = async() => {
+    let shares = await this.walletInstance.methods.shares(this.state.WalletSharesAddress).call()
+    this.setState({WalletShares:shares})
+  };
+
   //#############################################################
   //Wallet Contract Interaction Functions
   //#############################################################
+
+  handleTransferOwnershipWallet = async() => {
+    await this.walletInstance.methods.transferOwnership(this.state.newOwnerWallet).send({from: this.state.activeAddress});
+    this.state.newOwnerWallet = ""
+  };
+
+  handleRenounceOwnershipWallet = async() => {
+    await this.walletInstance.methods.renounceOwnership().send({from: this.state.activeAddress});
+  };
+
+  handleRelease = async() => {
+    await this.walletInstance.methods.release(this.state.releaseAddress).send({from: this.state.activeAddress});
+  };
+
+  handleEasyRelease = async() => {
+      await this.walletInstance.methods.release().send({from: this.state.activeAddress});
+  };
   
   //#############################################################
   //Web Page Helper Functions
@@ -498,14 +566,87 @@ class App extends Component {
       frame.appendChild(img);
       img = null
     }
+    
+    frame.hidden = false
+  };
+
+  handleOnLoad = async() => {
+    let permissions = cookies.get('Permissions');
+
+    if (typeof permissions !== 'undefined') {
+      let parentCapability = permissions[0].parentCapability;
+      let permissiontype = permissions[0].caveats[0].type;
+      let address = permissions[0].caveats[0].value[0];
+
+      if (window.ethereum &&
+      parentCapability === "eth_accounts" && 
+      permissiontype === "restrictReturnedAccounts" &&
+      this.web3.utils.isAddress(address)
+      ) {
+        this.handleRequestAccounts();
+        this.handleSwitchConnectButton();
+        } else {
+          cookies.remove("Permissions",{
+            path: "\\"
+          });
+        };    
+      };
+
+    this.refreshStateData()
+    this.handleRefreshWhitelistInfo()
+    this.handleRefreshWalletInfo()
+  };
+
+  handlePrintState = async() => {
+    console.log(this.state);
+  };
+
+  handlePrintPermissionsCookie = async() => {
+    console.log(cookies.get('Permissions'));
+  };
+
+  handleLoadOwnedTokens = async() => {
+    let _tokenData = await this.handleGetOwnedTokenData();
+
+    if (Object.keys(_tokenData).length > 0){
+      await this.handleLoadImages(_tokenData);
+    }
+  };
+
+  handleSwitchConnectButton = async() => {
+    let connectButton = document.getElementById("ConnectButton");
+    connectButton.hidden = true
+
+    let disconnectButton = document.getElementById("disconnectButton");
+    disconnectButton.hidden = false
+  };
+
+  handleDisconnect = async() => {
+    cookies.remove("Permissions",{
+      path: "\\"
+    });
+
+    this.setState({
+      activeAddress: ""
+    });
+
+    let ownedFrame = document.getElementById("owned hachis");
+    ownedFrame.hidden = true
+
+    let connectButton = document.getElementById("ConnectButton");
+    connectButton.hidden = false
+
+    let disconnectButton = document.getElementById("disconnectButton");
+    disconnectButton.hidden = true
   };
 
   //#############################################################
   //Meta Mask Functions
   //#############################################################
-
-   requestPermissions = async() => {
-    window.ethereum
+  
+  handleConnect = async() => {
+    if (window.ethereum) {
+      window.ethereum
       .request({
         method: 'wallet_requestPermissions',
         params: [{ eth_accounts: {} }],
@@ -514,12 +655,20 @@ class App extends Component {
         const accountsPermission = permissions.find(
           (permission) => permission.parentCapability === 'eth_accounts'
         );
+        cookies.set("Permissions",permissions,{
+          path: "\\",
+          maxAge: 86400,
+        });
+
         if (accountsPermission) {
           console.log('eth_accounts permission successfully requested!');
           this.setState({
             permission:true
-          })
-        }
+          });
+        };
+
+        this.handleRequestAccounts();
+        this.handleSwitchConnectButton();
       })
       .catch((error) => {
         if (error.code === 4001) {
@@ -529,24 +678,27 @@ class App extends Component {
           console.error(error);
         }
       });
-   };
-  
-  handleConnect = async() => {
-    if (window.ethereum) {
-      this.requestPermissions();
-      window.ethereum
-      .request({ method: "eth_requestAccounts" })
-      .then((res) => this.accountChangeHandler(res[0]))
-
-      let _tokenData = await this.handleGetOwnedTokenData();
-
-      if (Object.keys(_tokenData).length > 0){
-        await this.handleLoadImages(_tokenData);
-      };
     } 
     else {
       alert("install metamask extension!!");
     }
+  };
+
+  handleRequestAccounts = async() => {
+    window.ethereum
+    .request({ method: "eth_requestAccounts" })
+    .then((res) => {
+      this.accountChangeHandler(res[0]).then(() => {
+        this.handleLoadOwnedTokens();
+      }).catch((error) => {
+        if (error.code === 4001) {
+          // EIP-1193 userRejectedRequest error
+          console.log('Please connect to MetaMask.');
+        } else {
+          console.error(error);
+        };
+      });
+    });
   };
 
   accountChangeHandler = async(account) => {
@@ -582,6 +734,8 @@ class App extends Component {
         activeBalance: ethers.utils.formatEther(balance)
       })
       console.log("Balance: ", this.state.activeBalance, " Eth")
+    }).catch((error) => {
+      console.log(error);
     });
   };
 
@@ -605,14 +759,6 @@ class App extends Component {
    });
   };
 
-  listenForPageLoad = async() => {
-    window.onload = function() {
-      this.handleConnect();
-      this.handleGetOwnedTokenData();
-      this.handleRefreshWhitelistinfo();
-    };
-  };
-
   render() {
     if (!this.state.loaded) {
       return <div>Loading Web3, accounts, and contract...</div>;
@@ -622,10 +768,23 @@ class App extends Component {
         <div>
           <h1>Hachi NFT Home Page</h1>
         </div>
+        <div>
+          <button className="Connect-Button" id="ConnectButton" hidden={false} onClick={this.handleConnect}>Connect</button>
+          <button className="Disconnect-Button" id="disconnectButton" hidden={true} onClick={this.handleDisconnect}>Disconnect</button>
+          <br></br><br></br>
+        </div>
+        <div>
+          <u>Active Account</u>
+          <br></br><br></br>
+          {this.state.activeAddress}
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridGap: 10 }}>      
           <div>
+            <div>
+              <h2>Token Tools</h2>
+            </div>
             <div className="Generic-Box">
-              <h2>Mint Your Hachi</h2>
+              <h3>Mint Your Hachi</h3>
               Amount to Mint : <input type="number" min="1" max={this.state.readAddressMintLimit} placeholder="1" name="mintQuantity" value={this.state.mintQuantity} onChange={this.handleInputChange}></input>
               <button onClick={this.handleMintHachi}>Mint Hachi</button>
             </div>
@@ -697,12 +856,6 @@ class App extends Component {
             </div>
           </div>
           <div>
-            <div>
-              <button style={{backgroundColor: "#e7e7e7", color: "black", fontSize: "24px", borderRadius: "50px"}} onClick={this.handleConnect}>Connect</button>
-              <div>
-                Active Account: {this.state.activeAddress}
-              </div>
-            </div>
             <h2>Hachi Dashboard</h2>
             <div className="Dashboard-Box">
               <h3>Contracts Info</h3>
@@ -724,7 +877,7 @@ class App extends Component {
               <h2>Currently Owned Hachis</h2>
               <br></br>
             </div>
-            <div id="owned hachis">              
+            <div id="owned hachis" hidden = {true}>              
             </div>
           </div>
           <div>
@@ -751,7 +904,7 @@ class App extends Component {
                   {this.state.isPaused.toString()}<br></br>
                   <u>Meta Reveal</u> 
                   <br></br>
-                  {this.state.metaReveal.toString()}<br></br>
+                  {this.state.metaReveal.toString()}<br></br><br></br>
                   <button onClick={this.refreshStateData}>Refresh</button>
                 </div>
               </div>
@@ -798,10 +951,10 @@ class App extends Component {
                   <button onClick={this.handleSetMetaData}>Set URI</button>
                   <br></br>
                   Transfer Ownership To:&nbsp;
-                  <input type="text" placeholder="0x0000..." name="newOwner" onChange={this.handleInputChange}></input>
+                  <input type="text" placeholder="0x0000..." name="newOwnerNFT" onChange={this.handleInputChange}></input>
                   &nbsp;
                   <button onClick={this.handleTransferOwnership}>Transfer Ownership</button>
-                  <br></br>
+                  <br></br><br></br>
                   <button onClick={this.handleRenounceOwnership}>Renounce Ownership</button>
                 </div>
               </div>
@@ -824,16 +977,12 @@ class App extends Component {
               <div className="Generic-Box">
                 <h3>Info</h3>
                 <div>
-                  <u>Owner</u> 
-                  <br></br>
-                  {this.state.whitelistOwner}
-                  <br></br>
-                  <u>Merkle root</u>
-                  <br></br>
-                  {this.state.merkleRoot}
-                  <br></br>
+                  <u>Owner</u><br></br>
+                  {this.state.whitelistOwner}<br></br>
+                  <u>Merkle root</u> <br></br>
+                  {this.state.merkleRoot}<br></br>
                 </div>
-                <button onClick={this.handleRefreshWhitelistinfo}>Refresh</button>
+                <button onClick={this.handleRefreshWhitelistInfo}>Refresh</button>
               </div>
               <div className="Generic-Box">
                 <h4>Update Functions</h4>
@@ -843,33 +992,88 @@ class App extends Component {
                   <button onClick={this.handleupdateMerkleRoot}>Update</button>
                   <br></br>
                   Transfer Ownership To:&nbsp;
-                  <input type="text" placeholder="0x0000..." name="newOwner" onChange={this.handleInputChange}></input>
+                  <input type="text" placeholder="0x0000..." name="newOwnerWhitelist" onChange={this.handleInputChange}></input>
                   &nbsp;
                   <button onClick={this.handleTransferOwnershipwhitelist}>Transfer Ownership</button>
-                  <br></br>
+                  <br></br><br></br>
                   <button onClick={this.handleRenounceOwnershipWhitelist}>Renounce Ownership</button>
                 </div>
               </div>
             </div>
           </div> 
           <div>
-            <h2>Payment</h2>
+            <h2>Wallet</h2>
             <div className="Generic-Box">
               <h3>Payment Contract Info</h3>
               <div>
+              <u>Owner</u><br></br>
+                {this.state.walletOwner}<br></br>
+                <u>Balance</u><br></br>
+                {this.state.walletBalance} Eth<br></br>
+                <u>Balance Owed</u><br></br>
+                {this.state.walletBalanceOwed} Eth<br></br>
+                <u>Total Shares</u><br></br>
+                {this.state.walletShares}<br></br>
+                <u>Total Released</u><br></br>
+                {this.state.walletReleased}<br></br><br></br>
+                <button onClick={this.handleRefreshWalletInfo}>Refresh Data</button>
               </div>
             </div>
             <div className="Generic-Box">
-              <h3>Update Payment Info</h3>
+              <h3>Read Contract Info Functions</h3>
               <div>
+                Payee Index:&nbsp;
+                <input type="number" placeholder="1" min="1" name="WalletPayeeIndex" onChange={this.handleInputChange}></input>
+                &nbsp;
+                <button onClick={this.handleGetPayee}>Get Payee</button>
+                <br></br>
+                Payee Address:&nbsp;
+                {this.state.WalletPayeeAddress}
+                <br></br><br></br>
+                Released To Address:&nbsp;
+                <input type="text" placeholder="0x0000..." name="WalletReleasedToAddress" onChange={this.handleInputChange}></input>
+                &nbsp;
+                <button onClick={this.handleReleasedTo}>Get Released Amount</button>
+                <br></br>
+                Amount released to Address:&nbsp;
+                {this.state.WalletReleasedTo}
+                <br></br><br></br>
+                Shares Address:&nbsp;
+                <input type="text" placeholder="0x0000..." name="WalletSharesAddress" onChange={this.handleInputChange}></input>
+                &nbsp;
+                <button onClick={this.handleGetShares}>Get Number of Shares</button>
+                <br></br>
+                Number of Shares:&nbsp;
+                {this.state.WalletShares}
+              </div>
+            </div>
+            <div className="Generic-Box">
+              <h3>Update Wallet Contract Functions</h3>
+              <div>
+              Transfer Ownership To:&nbsp;
+                  <input type="text" placeholder="0x0000..." name="newOwnerWallet" onChange={this.handleInputChange}></input>
+                  &nbsp;
+                  <button onClick={this.handleTransferOwnershipWallet}>Transfer Ownership</button>
+                  <br></br><br></br>
+                  <button onClick={this.handleRenounceOwnershipWallet}>Renounce Ownership</button>
               </div>
             </div>
             <div className="Generic-Box">
               <h3>Request Payment</h3>
               <div>
+                Account to Release:&nbsp;
+                <input type="text" placeholder="0x0000..." name="releaseAddress" onChange={this.handleInputChange}></input>
+                &nbsp;
+                <button onClick={this.handleRelease}>Release Funds</button>
+                <br></br><br></br>
+                <button onClick={this.handleEasyRelease}>Easy Release</button>
               </div>
             </div> 
           </div>   
+        </div>
+        <div>
+        <button hidden={true} onClick={this.handlePrintState}>Print State</button>
+        <button hidden={true} onClick={this.handlePrintPermissionsCookie}>Print Permissions Cookie</button>
         </div>        
       </div>
     );

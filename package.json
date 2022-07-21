@@ -16,7 +16,8 @@
     "readline": "^1.3.0",
     "solc": "^0.8.13",
     "truffle": "^5.5.18",
-    "truffle-contract-size": "^2.0.1"
+    "truffle-contract-size": "^2.0.1",
+    "universal-cookie": "^4.0.4"
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.15",

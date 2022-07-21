@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 //HachiNFT
 contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuard {
-    string private hachiGenericMetaDataURI = "https://ipfs.io/ipfs/QmTYYoDsJ4mRefXffUGCK8SpGSjeeysgYFqq1RM2fQvpXp?filename=GenricMetaData.json";
+    string private hachiGenericMetaDataURI = "https://ipfs.io/ipfs/QmTo78LCfyoZeR13832XgE1BZXb7QsLDafpaXSzxUSBkF1?filename=GenricMetaData.json";
     string private hachiIPFSMetaDataURI;
     string private constant SIGNING_DOMAIN = "HachiNftSig";
     string private constant SIGNATURE_VERSION = "1";

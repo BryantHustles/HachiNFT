@@ -14,16 +14,8 @@ contract HachiWallet is PaymentSplitter, Ownable {
     PaymentSplitter(_address, _shares) {
     }
 
-    function release(address payable account) 
-    public 
-    onlyOwner
-    override(PaymentSplitter) 
-    {
-        super.release(account);
-    }
-
-    function easyRelease() public {
-        HachiWallet.release(payable(msg.sender));
+    function release() public {
+        release(payable(msg.sender));
     }
 
     function viewBalanceOwed() public view returns (uint) {
