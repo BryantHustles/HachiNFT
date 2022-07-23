@@ -16,15 +16,28 @@ module.exports = {
 
     ropsten_Infura: {
       networkCheckTimeout: 100000,
-      imeoutBlocks: 200,
+      timeoutBlocks: 200,
       provider: function() {
         return new HDWalletProvider({
           mnemonic: process.env.Mneumonic,
-          providerOrUrl: "wss://ropsten.infura.io/ws/v3/640d9a678d684d5e9a5896df9209f504",
+          providerOrUrl: "https://ropsten.infura.io/v3/19027258b18443b78776169a6f376ece",
           addressIndex: AccountIndex
       });
       },
       network_id: 3,
+    },
+
+    rinkby_Infura: {
+      networkCheckTimeout: 100000,
+      timeoutBlocks: 200,
+      provider: function() {
+        return new HDWalletProvider({
+          mnemonic: process.env.Mneumonic,
+          providerOrUrl: "https://rinkeby.infura.io/v3/19027258b18443b78776169a6f376ece",
+          addressIndex: AccountIndex
+      });
+      },
+      network_id: 4,
     },
 
     //Used to connect to Ganache

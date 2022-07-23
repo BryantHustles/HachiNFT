@@ -15,11 +15,11 @@ import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 //HachiNFT
 contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuard {
-    string private hachiGenericMetaDataURI = "https://ipfs.io/ipfs/QmTo78LCfyoZeR13832XgE1BZXb7QsLDafpaXSzxUSBkF1?filename=GenricMetaData.json";
+    string private hachiGenericMetaDataURI = "ipfs://QmbhqqnAxzqArd8nnAeR9bw52dWtLh2huKSqeJg2p1SrWG";
     string private hachiIPFSMetaDataURI;
     string private constant SIGNING_DOMAIN = "HachiNftSig";
     string private constant SIGNATURE_VERSION = "1";
-    string public contractURI = "https://ipfs.io/ipfs/QmRdnAsPufkt2nVACMud5yi7dTGvHiwi9h24N5uX3urfiu?filename=HachiContractTest.json";
+    string public contractURI = "ipfs://QmUQafEF5PhEBRD5jcPEBZqWrm1DtvGCFJ4sw7UpGsCHo4";
 
     bool public metaDataReveal;
     bool public publicMint;
@@ -123,21 +123,9 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
         )));
     }
 
-    // function deleteDefaultRoyalty() public onlyOwner {
-    //     _deleteDefaultRoyalty();
-    // }
-
     function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
         _setDefaultRoyalty(receiver, feeNumerator);
     }
-
-    // function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) public onlyOwner {
-    //     _setTokenRoyalty(tokenId, receiver, feeNumerator);
-    // }
-
-    // function resetTokenRoyalty(uint256 tokenId) public onlyOwner {
-    //     _resetTokenRoyalty(tokenId);
-    // }
 
     function updateMintLimit(uint _limit) public onlyOwner {
         mintLimit = _limit;
