@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// Hachi NFT Contracts ERC1155 Contract
 
 pragma solidity ^0.8.11;
 
@@ -13,18 +14,22 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-//HachiNFT
+/**
+ * @dev Implementation of the ERC 1155 standard as an NFT contract
+ * See https://github.com/BryantHustles/HachiNFT
+ */
 contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuard {
     string private hachiGenericMetaDataURI = "ipfs://QmbhqqnAxzqArd8nnAeR9bw52dWtLh2huKSqeJg2p1SrWG";
-    string private hachiIPFSMetaDataURI;
     string private constant SIGNING_DOMAIN = "HachiNftSig";
     string private constant SIGNATURE_VERSION = "1";
-    string public contractURI = "ipfs://QmUQafEF5PhEBRD5jcPEBZqWrm1DtvGCFJ4sw7UpGsCHo4";
+    string public contractURI = "ipfs://QmPT1Z3WtAbqiBZwbSFHFk2UE6VRh2JXVpUKp5RE8hC86T";
+    string public name = "Hachi NFT";
+    string public symbol = "HACHI";
 
     bool public metaDataReveal;
     bool public publicMint;
 
-    uint public mintPrice = 0.1 ether;
+    uint public mintPrice = 0.001 ether;
     uint public addressMintLimit = 3;
     uint public mintLimit = 8000;
     uint private tokenIndex = 0;
@@ -49,9 +54,8 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
         HachiWhitelist _whtlst,
         HachiWallet _wllt
         )
-        ERC1155(hachiGenericMetaDataURI)
+        ERC1155(_ipfs)
         EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {
-            hachiIPFSMetaDataURI = _ipfs; 
             whtlst = _whtlst;
             wllt = _wllt;
             setDefaultRoyalty(address(_wllt), 300);
@@ -62,24 +66,29 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
         payable(wllt).transfer(msg.value);
     }
 
-    function uri(uint256 tokenId) override public view returns (string memory) {
+    function uri(uint256 _tokenId) override public view returns (string memory) {
 
-        if (!metaDataReveal)
+        if (!metaDataReveal) {
             return hachiGenericMetaDataURI;
-
-        return(string(abi.encodePacked(hachiIPFSMetaDataURI, Strings.toString(tokenId),".json")));
+        } else {
+            return(string(abi.encodePacked(super.uri(_tokenId), Strings.toString(_tokenId))));
+        }
     }
 
-    function setGenericMeta(string memory sampleURI) public onlyOwner {
-        hachiGenericMetaDataURI = sampleURI;
+    function setGenericMeta(string memory _uri) public onlyOwner {
+        hachiGenericMetaDataURI = _uri;
     }
 
     function revealMetaData() public onlyOwner {
         metaDataReveal = true;
     }
 
-      function setURI(string memory _newuri) public onlyOwner {
-        hachiIPFSMetaDataURI = _newuri;
+    function setURI(string memory _newuri) public onlyOwner {
+        ERC1155._setURI(_newuri);
+    }
+
+    function setContractURI(string memory _contractURI) public onlyOwner {
+        contractURI = _contractURI;
     }
 
     function mintHachi(HachiTicket calldata _ticket) public whenNotPaused nonReentrant payable  {

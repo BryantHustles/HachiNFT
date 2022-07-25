@@ -67,7 +67,8 @@ class App extends Component {
     WalletPayeeAddress: "",
     WalletReleasedTo: "",
     WalletShares: 0,
-    releaseAddress: ""
+    releaseAddress: "",
+    contractUri: ""
   };
 
   componentDidMount = async () => {
@@ -279,6 +280,9 @@ class App extends Component {
   handleSetGenericMetadata = async() => {
     await this.tokenInstance.methods.setGenericMeta(this.state.defualtUri).send({from: this.state.activeAddress});
   };
+  handleSetContractURI = async() => {
+    await this.tokenInstance.methods.setContractURI(this.state.contractUri).send({from: this.state.activeAddress})
+  };
   handleSetMetaData = async() => {
     await this.tokenInstance.methods.setURI(this.state.MetaUri).send({from: this.state.activeAddress});
   };
@@ -424,6 +428,7 @@ class App extends Component {
   handleGetOwnedTokenData  = async() => {
 
     let _ownedTokens = await this.handleGetOwnedTokens();
+
     let _uriMap = {};
 
     for (let i = 0; i<_ownedTokens.length; i++) {
@@ -993,6 +998,15 @@ class App extends Component {
                   <button type="submit" onClick={this.handleTransferBatch}>Transfer</button>
                 </div>
               </div>
+              <div>
+                <h3>Read Other Contract info</h3>
+                <div className="Generic-Box">
+                  Token Number : <input type="number" placeholder="1" min="1" max={this.state.readMintLimit} name="tokenNumber" onChange={this.handleInputChange}></input>
+                  <button onClick={this.handleGetQueriedTokenURI}>Get URI</button>
+                  <br></br>
+                  Token URI : {this.state.tokenURI}
+                </div>
+              </div>
             </div>
           </div>
           <div id="Whitelist Tools" className="tabcontent">
@@ -1164,21 +1178,17 @@ class App extends Component {
                   &nbsp;
                   <button onClick={this.handleSetMetaData}>Set URI</button>
                   <br></br>
+                  Set Contract URI:&nbsp;
+                  <input type="text" placeholder="https://wwww.URI.com/uri.json" name="contractUri" width="auto" onChange={this.handleInputChange}></input>
+                  &nbsp;
+                  <button onClick={this.handleSetContractURI}>Set URI</button>
+                  <br></br>
                   Transfer Ownership To:&nbsp;
                   <input type="text" placeholder="0x0000..." name="newOwnerNFT" onChange={this.handleInputChange}></input>
                   &nbsp;
                   <button onClick={this.handleTransferOwnership}>Transfer Ownership</button>
                   <br></br><br></br>
                   <button onClick={this.handleRenounceOwnership}>Renounce Ownership</button>
-                </div>
-              </div>
-              <div>
-                <h4>Read Other Contract info</h4>
-                <div className="Generic-Box">
-                  Token Number : <input type="number" placeholder="1" min="1" max={this.state.readMintLimit} name="tokenNumber" onChange={this.handleInputChange}></input>
-                  <button onClick={this.handleGetQueriedTokenURI}>Get URI</button>
-                  <br></br>
-                  Token URI : {this.state.tokenURI}
                 </div>
               </div>
             </div>
