@@ -19,7 +19,6 @@ contract HachiWallet is PaymentSplitter, Ownable {
     }
 
     function viewBalanceOwed() public view returns (uint) {
-        require(shares(msg.sender) > 0);
         uint _shares = shares(msg.sender);
         uint _totalShares = totalShares();
         uint _totalReceived = address(this).balance + totalReleased();

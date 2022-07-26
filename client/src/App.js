@@ -7,9 +7,14 @@ import { ethers } from "ethers";
 import "./App.css";
 import treeJSON from "./Whitelist/merkleTree.json"
 import Cookies from 'universal-cookie';
+import * as IPFS from 'ipfs-core'
 
 //Cookies
 const cookies = new Cookies();
+
+//ipfs Fetch
+const ipfs = IPFS.create()
+
 
 //Merkle Tree
 const readMerkleTree = require("./Whitelist/ReadMerkleTree");
@@ -74,7 +79,7 @@ class App extends Component {
     try {
       // Get network provider and web3 instance.
       this.web3 = await getWeb3();
-      this.networkId = await this.web3.eth.net.getId()
+      this.networkId = 4 //await this.web3.eth.net.getId()
 
       // Use web3 to get the user's accounts.
        this.accounts = await this.web3.eth.getAccounts();
@@ -128,6 +133,9 @@ class App extends Component {
       //Start listeners
       this.listenForAccountChanged();
       this.listenForChainChanged();
+      this.listenForMint();
+      this.listenForSingleTransfer();
+      this.listenForBatchTransfer();
       
       //Set State
       this.setState({loaded:true},this.handleOnLoad);
@@ -426,7 +434,14 @@ class App extends Component {
     for (let i = 0; i<_ownedTokens.length; i++) {
 
       let _uri = await this.handleGetTokenURI(_ownedTokens[i]);
-      let _response = await fetch(_uri);
+
+      let _response = null
+      if (_uri.startsWith("http")) {
+        _response = await fetch(_uri);
+      } else if (_uri.startsWith("ipfs")) {
+        //_response = await ipfsFetch(_uri);
+      };
+      
       let _json = await _response.json();
 
       _uriMap[_ownedTokens[i]] = {
@@ -595,6 +610,9 @@ class App extends Component {
     this.refreshStateData()
     this.handleRefreshWhitelistInfo()
     this.handleRefreshWalletInfo()
+    
+    document.getElementById("Hachi NFT").style.display = "block";
+    document.getElementById("Hachi NFT Button").className += " active";
   };
 
   handlePrintState = async() => {
@@ -638,6 +656,27 @@ class App extends Component {
 
     let disconnectButton = document.getElementById("disconnectButton");
     disconnectButton.hidden = true
+  };
+
+  handlechangeTab = (event) => {
+    const target = event.target;
+    const name = target.name;
+
+    // Get all elements with class="tabcontent" and hide them
+    let tabcontent = document.getElementsByClassName("tabcontent");
+    for (let i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
+    };
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    let tablinks = document.getElementsByClassName("tablinks");
+    for (let i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    };
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(name).style.display = "block";
+    target.className += " active";
   };
 
   //#############################################################
@@ -759,27 +798,128 @@ class App extends Component {
    });
   };
 
+  listenForMint = async() => {
+    this.tokenInstance.events.Mint({
+      filter: {
+        to: this.state.activeAddress
+      },
+      fromBlock: "earliest"
+    })
+    .on("connected", function(subscriptionId){
+      console.log("Listen for Mint Subscription ID\n",subscriptionId);
+    })
+    .on('data', function(event){
+      console.log(event);
+      window.location.reload();
+    })
+    .on('error', function(error, receipt) { 
+      console.log("\nError\n",error,"\nReceipt\n",receipt);
+    });
+  };
+
+  listenForSingleTransfer = async() => {
+    this.tokenInstance.events.TransferSingle({
+      filter: {
+        from: this.state.activeAddress
+      },
+      fromBlock: "earliest"
+    })
+    .on("connected", function(subscriptionId){
+      console.log("Listen for Single Transfer Subscription ID\n",subscriptionId);
+    })
+    .on('data', function(event){
+      let token = event.returnValues.id
+      let address = event.returnValues.to
+      console.log("Token " + token + " has been successfully transferred to " + address);
+      alert("Token " + token + " has been successfully transferred to " + address)
+      window.location.reload();
+    })
+    .on('error', function(error, receipt) { 
+      console.log("\nError\n",error,"\nReceipt\n",receipt);
+    });
+  };
+
+  listenForBatchTransfer = async() => {
+    this.tokenInstance.events.TransferBatch({
+      filter: {
+        from: this.state.activeAddress
+      },
+      fromBlock: "earliest"
+    })
+    .on("connected", function(subscriptionId){
+      console.log("Listen for Batch Transfer Subscription ID\n",subscriptionId);
+    })
+    .on('data', function(event){
+      let tokens = event.returnValues.ids
+      let address = event.returnValues.to
+      let tokenString = tokens[0]
+      for(let i = 1; i < tokens.length; i++){
+        tokenString += (" and " + tokens[i])
+      };
+      console.log("Tokens " + tokenString + " have been successfully transferred to " + address);
+      alert("Tokens " + tokenString + " have been successfully transferred to " + address)
+      window.location.reload();
+    })
+    .on('error', function(error, receipt) { 
+      console.log("\nError\n",error,"\nReceipt\n",receipt);
+    });
+  };
+
+  //#############################################################
+  //HTML Code
+  //#############################################################
+
   render() {
     if (!this.state.loaded) {
       return <div>Loading Web3, accounts, and contract...</div>;
     }
     return (
-      <div className="App" style={{backgroundColor:"#CCD9FF"}}>
-        <div>
-          <h1>Hachi NFT Home Page</h1>
+      <div className="App">
+        <div className="tab">
+          <button className="tablinks" name="Hachi NFT" id="Hachi NFT Button" onClick={this.handlechangeTab}>Hachi NFT</button>
+          <button className="tablinks" name="Whitelist Tools" id="Whitelist Tools Button" onClick={this.handlechangeTab}>Whitelist Tools</button>
+          <button className="tablinks" name="Wallet Tools" id="Wallet Tools Button" onClick={this.handlechangeTab}>Wallet Tools</button>
+          <button className="tablinks" name="Admin Tools" id="Admin Tools Button" onClick={this.handlechangeTab}>Admin Tools</button>
         </div>
         <div>
           <button className="Connect-Button" id="ConnectButton" hidden={false} onClick={this.handleConnect}>Connect</button>
           <button className="Disconnect-Button" id="disconnectButton" hidden={true} onClick={this.handleDisconnect}>Disconnect</button>
-          <br></br><br></br>
+        </div>
+        <div>
+          <h1>Hachi NFT</h1>
         </div>
         <div>
           <u>Active Account</u>
           <br></br><br></br>
           {this.state.activeAddress}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridGap: 10 }}>      
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridGap: 10 }}>
           <div>
+            <h2>Hachi Dashboard</h2>
+            <div className="Dashboard-Box">
+              <h3>Contracts Info</h3>
+              <p><u>Contract Address</u><br></br>
+              {this.tokenInstance._address}
+              <br></br>
+              <u>Whitelist Address</u><br></br>
+              {this.whitelistInstance._address}
+              <br></br>
+              <u>Wallet Address</u><br></br>
+              {this.walletInstance._address}
+              <br></br>
+              <u>Contract URI</u><br></br>
+              {this.state.readUri}
+              <br></br>
+              </p>
+            </div>
+            <div>
+              <h2>Currently Owned Hachis</h2>
+              <br></br>
+            </div>
+            <div id="owned hachis" hidden = {true}>              
+            </div>
+          </div>      
+          <div id="Hachi NFT" className="tabcontent">
             <div>
               <h2>Token Tools</h2>
             </div>
@@ -855,32 +995,106 @@ class App extends Component {
               </div>
             </div>
           </div>
-          <div>
-            <h2>Hachi Dashboard</h2>
-            <div className="Dashboard-Box">
-              <h3>Contracts Info</h3>
-              <p><u>Contract Address</u><br></br>
-              {this.tokenInstance._address}
-              <br></br>
-              <u>Whitelist Address</u><br></br>
-              {this.whitelistInstance._address}
-              <br></br>
-              <u>Wallet Address</u><br></br>
-              {this.walletInstance._address}
-              <br></br>
-              <u>Contract URI</u><br></br>
-              {this.state.readUri}
-              <br></br>
-              </p>
-            </div>
+          <div id="Whitelist Tools" className="tabcontent">
+            <h2>Whitelist</h2>
             <div>
-              <h2>Currently Owned Hachis</h2>
-              <br></br>
-            </div>
-            <div id="owned hachis" hidden = {true}>              
+              <div className="Generic-Box">
+                <h3>Info</h3>
+                <div>
+                  <u>Owner</u><br></br>
+                  {this.state.whitelistOwner}<br></br>
+                  <u>Merkle root</u> <br></br>
+                  {this.state.merkleRoot}<br></br>
+                </div>
+                <button onClick={this.handleRefreshWhitelistInfo}>Refresh</button>
+              </div>
+              <div className="Generic-Box">
+                <h4>Update Functions</h4>
+                <div>
+                  Set Merkle Root:&nbsp;
+                  <input  type="text" placeholder="0xjnd8923hb39fbb29db" name="newMerkleRoot" onChange={this.handleInputChange}></input>
+                  <button onClick={this.handleupdateMerkleRoot}>Update</button>
+                  <br></br>
+                  Transfer Ownership To:&nbsp;
+                  <input type="text" placeholder="0x0000..." name="newOwnerWhitelist" onChange={this.handleInputChange}></input>
+                  &nbsp;
+                  <button onClick={this.handleTransferOwnershipwhitelist}>Transfer Ownership</button>
+                  <br></br><br></br>
+                  <button onClick={this.handleRenounceOwnershipWhitelist}>Renounce Ownership</button>
+                </div>
+              </div>
             </div>
           </div>
-          <div>
+          <div id="Wallet Tools" className="tabcontent">
+            <h2>Wallet</h2>
+            <div className="Generic-Box">
+              <h3>Payment Contract Info</h3>
+              <div>
+              <u>Owner</u><br></br>
+                {this.state.walletOwner}<br></br>
+                <u>Balance</u><br></br>
+                {this.state.walletBalance} Eth<br></br>
+                <u>Balance Owed</u><br></br>
+                {this.state.walletBalanceOwed} Eth<br></br>
+                <u>Total Shares</u><br></br>
+                {this.state.walletShares}<br></br>
+                <u>Total Released</u><br></br>
+                {this.state.walletReleased}<br></br><br></br>
+                <button onClick={this.handleRefreshWalletInfo}>Refresh Data</button>
+              </div>
+            </div>
+            <div className="Generic-Box">
+              <h3>Read Contract Info Functions</h3>
+              <div>
+                Payee Index:&nbsp;
+                <input type="number" placeholder="1" min="1" name="WalletPayeeIndex" onChange={this.handleInputChange}></input>
+                &nbsp;
+                <button onClick={this.handleGetPayee}>Get Payee</button>
+                <br></br>
+                Payee Address:&nbsp;
+                {this.state.WalletPayeeAddress}
+                <br></br><br></br>
+                Released To Address:&nbsp;
+                <input type="text" placeholder="0x0000..." name="WalletReleasedToAddress" onChange={this.handleInputChange}></input>
+                &nbsp;
+                <button onClick={this.handleReleasedTo}>Get Released Amount</button>
+                <br></br>
+                Amount released to Address:&nbsp;
+                {this.state.WalletReleasedTo}
+                <br></br><br></br>
+                Shares Address:&nbsp;
+                <input type="text" placeholder="0x0000..." name="WalletSharesAddress" onChange={this.handleInputChange}></input>
+                &nbsp;
+                <button onClick={this.handleGetShares}>Get Number of Shares</button>
+                <br></br>
+                Number of Shares:&nbsp;
+                {this.state.WalletShares}
+              </div>
+            </div>
+            <div className="Generic-Box">
+              <h3>Update Wallet Contract Functions</h3>
+              <div>
+              Transfer Ownership To:&nbsp;
+                  <input type="text" placeholder="0x0000..." name="newOwnerWallet" onChange={this.handleInputChange}></input>
+                  &nbsp;
+                  <button onClick={this.handleTransferOwnershipWallet}>Transfer Ownership</button>
+                  <br></br><br></br>
+                  <button onClick={this.handleRenounceOwnershipWallet}>Renounce Ownership</button>
+              </div>
+            </div>
+            <div className="Generic-Box">
+              <h3>Request Payment</h3>
+              <div>
+                Account to Release:&nbsp;
+                <input type="text" placeholder="0x0000..." name="releaseAddress" onChange={this.handleInputChange}></input>
+                &nbsp;
+                <button onClick={this.handleRelease}>Release Funds</button>
+                <br></br><br></br>
+                <button onClick={this.handleEasyRelease}>Easy Release</button>
+              </div>
+            </div> 
+          </div>   
+          <div id="Admin Tools" className="tabcontent">
             <h2>Administrative Tools</h2>
             <div>
               <h3>NFT Contract</h3>
@@ -970,110 +1184,9 @@ class App extends Component {
             </div>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridGap: 10 }}>
-          <div >
-            <h2>Whitelist</h2>
-            <div>
-              <div className="Generic-Box">
-                <h3>Info</h3>
-                <div>
-                  <u>Owner</u><br></br>
-                  {this.state.whitelistOwner}<br></br>
-                  <u>Merkle root</u> <br></br>
-                  {this.state.merkleRoot}<br></br>
-                </div>
-                <button onClick={this.handleRefreshWhitelistInfo}>Refresh</button>
-              </div>
-              <div className="Generic-Box">
-                <h4>Update Functions</h4>
-                <div>
-                  Set Merkle Root:&nbsp;
-                  <input  type="text" placeholder="0xjnd8923hb39fbb29db" name="newMerkleRoot" onChange={this.handleInputChange}></input>
-                  <button onClick={this.handleupdateMerkleRoot}>Update</button>
-                  <br></br>
-                  Transfer Ownership To:&nbsp;
-                  <input type="text" placeholder="0x0000..." name="newOwnerWhitelist" onChange={this.handleInputChange}></input>
-                  &nbsp;
-                  <button onClick={this.handleTransferOwnershipwhitelist}>Transfer Ownership</button>
-                  <br></br><br></br>
-                  <button onClick={this.handleRenounceOwnershipWhitelist}>Renounce Ownership</button>
-                </div>
-              </div>
-            </div>
-          </div> 
-          <div>
-            <h2>Wallet</h2>
-            <div className="Generic-Box">
-              <h3>Payment Contract Info</h3>
-              <div>
-              <u>Owner</u><br></br>
-                {this.state.walletOwner}<br></br>
-                <u>Balance</u><br></br>
-                {this.state.walletBalance} Eth<br></br>
-                <u>Balance Owed</u><br></br>
-                {this.state.walletBalanceOwed} Eth<br></br>
-                <u>Total Shares</u><br></br>
-                {this.state.walletShares}<br></br>
-                <u>Total Released</u><br></br>
-                {this.state.walletReleased}<br></br><br></br>
-                <button onClick={this.handleRefreshWalletInfo}>Refresh Data</button>
-              </div>
-            </div>
-            <div className="Generic-Box">
-              <h3>Read Contract Info Functions</h3>
-              <div>
-                Payee Index:&nbsp;
-                <input type="number" placeholder="1" min="1" name="WalletPayeeIndex" onChange={this.handleInputChange}></input>
-                &nbsp;
-                <button onClick={this.handleGetPayee}>Get Payee</button>
-                <br></br>
-                Payee Address:&nbsp;
-                {this.state.WalletPayeeAddress}
-                <br></br><br></br>
-                Released To Address:&nbsp;
-                <input type="text" placeholder="0x0000..." name="WalletReleasedToAddress" onChange={this.handleInputChange}></input>
-                &nbsp;
-                <button onClick={this.handleReleasedTo}>Get Released Amount</button>
-                <br></br>
-                Amount released to Address:&nbsp;
-                {this.state.WalletReleasedTo}
-                <br></br><br></br>
-                Shares Address:&nbsp;
-                <input type="text" placeholder="0x0000..." name="WalletSharesAddress" onChange={this.handleInputChange}></input>
-                &nbsp;
-                <button onClick={this.handleGetShares}>Get Number of Shares</button>
-                <br></br>
-                Number of Shares:&nbsp;
-                {this.state.WalletShares}
-              </div>
-            </div>
-            <div className="Generic-Box">
-              <h3>Update Wallet Contract Functions</h3>
-              <div>
-              Transfer Ownership To:&nbsp;
-                  <input type="text" placeholder="0x0000..." name="newOwnerWallet" onChange={this.handleInputChange}></input>
-                  &nbsp;
-                  <button onClick={this.handleTransferOwnershipWallet}>Transfer Ownership</button>
-                  <br></br><br></br>
-                  <button onClick={this.handleRenounceOwnershipWallet}>Renounce Ownership</button>
-              </div>
-            </div>
-            <div className="Generic-Box">
-              <h3>Request Payment</h3>
-              <div>
-                Account to Release:&nbsp;
-                <input type="text" placeholder="0x0000..." name="releaseAddress" onChange={this.handleInputChange}></input>
-                &nbsp;
-                <button onClick={this.handleRelease}>Release Funds</button>
-                <br></br><br></br>
-                <button onClick={this.handleEasyRelease}>Easy Release</button>
-              </div>
-            </div> 
-          </div>   
-        </div>
         <div>
-        <button hidden={true} onClick={this.handlePrintState}>Print State</button>
-        <button hidden={true} onClick={this.handlePrintPermissionsCookie}>Print Permissions Cookie</button>
+          <button hidden={true} onClick={this.handlePrintState}>Print State</button>
+          <button hidden={true} onClick={this.handlePrintPermissionsCookie}>Print Permissions Cookie</button>
         </div>        
       </div>
     );

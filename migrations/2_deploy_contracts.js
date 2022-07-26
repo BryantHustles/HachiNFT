@@ -16,7 +16,7 @@ module.exports = async function(deployer) {
     const merkleTree = readMerkleTree(treeJSON);
     const rootHash = merkleTree.getRoot();
 
-    await deployer.deploy(Wallet,[deployerAccount,Account2,Account3],[1,1,2]);
+    await deployer.deploy(Wallet,[deployerAccount,Account2,Account3],[90,5,5]);
     await deployer.deploy(Whitelist,rootHash);
 
     let WalletInstance = await Wallet.deployed();
