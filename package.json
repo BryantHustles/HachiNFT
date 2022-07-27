@@ -26,6 +26,8 @@
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.15",
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-dev.23",
     "truffle-plugin-verify": "^0.5.26"
   }
 }
