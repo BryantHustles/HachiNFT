@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
-// Hachi NFT Contracts ERC1155 Contract.
+/// @title Hachi NFT Contract
+/// @author Bryant Backus
+
 
 pragma solidity ^0.8.11;
 
@@ -122,7 +124,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Updates the generic metadata uri used before metadata is revealed.
     * @param _uri The uri string to the generic pre-reveal metadata json.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function setGenericMeta(string memory _uri) public onlyOwner {
         hachiGenericMetaDataURI = _uri;
@@ -133,7 +135,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     * When the flag is false, the uri function returns the generic uri.
     * When the flag is true, the token uri is returned.
     * See {uri}.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function revealMetaData() public onlyOwner {
         metaDataReveal = true;
@@ -142,7 +144,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Updates the token metadata base uri.
     * @param _newuri String, base uri where token metadata is stored.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function setURI(string memory _newuri) public onlyOwner {
         ERC1155._setURI(_newuri);
@@ -151,7 +153,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Updates the contract uri location where the contract info json is stored.
     * @param _contractURI The new uri path to the contract metadata json.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function setContractURI(string memory _contractURI) public onlyOwner {
         contractURI = _contractURI;
@@ -226,7 +228,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     * @dev Updates the default royalty value for all tokens.
     * @param receiver address which will recieve royalties.
     * @param feeNumerator royalty to be collected in basis points.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyOwner {
         _setDefaultRoyalty(receiver, feeNumerator);
@@ -235,7 +237,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Updates the total minted tokens allowed.
     * @param _limit uint, new token limit.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function updateMintLimit(uint _limit) public onlyOwner {
         mintLimit = _limit;
@@ -244,7 +246,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Updates the price required to mint a single token.
     * @param _price uint, new price to set in wei
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function updateMintPrice(uint _price) public onlyOwner {
         mintPrice = _price;
@@ -253,7 +255,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Updates the number of tokens any single address can mint.
     * @param _limit uint, new address limit.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function updateAddressMintLimit(uint _limit) public onlyOwner {
         addressMintLimit = _limit;
@@ -262,7 +264,7 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Updates the public mint boolean. When true, merkle proofs are not required to mint.
     * @param _publicMint bool to set variable to.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
     */
     function updatePublicMint(bool _publicMint) public onlyOwner {
         require(_publicMint != publicMint,"input eqaul to state");
@@ -272,7 +274,8 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Sets the paused variable to true. Functions that use when not paused
     * will start to revert. Functions that use when paused will start to work.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
+    * See {Pausable}
     */
     function pause() public onlyOwner {
         _pause();
@@ -281,7 +284,8 @@ contract HACHINFT is ERC1155, EIP712, ERC2981, Ownable, Pausable, ReentrancyGuar
     /**
     * @dev Sets the paused variable to false. Functions that use when not paused
     * will start to work. Functions that use when paused will start to revert.
-    * @notice Only the contract owner can call this function.
+    * @notice Only the contract owner can call this function. See {Ownable}.
+    * See {Pausable}
     */
     function unpause() public onlyOwner {
         _unpause();
