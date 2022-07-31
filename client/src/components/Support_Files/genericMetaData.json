@@ -1,0 +1,19 @@
+{
+    "name":"Generic Hachi",
+    "title":"Generic Hachi",
+    "type":"ORIGINAL",
+    "description":"Generic  Meta Data for testing purposes",
+    "external_url":"www.google.com",
+    "image":"ipfs://QmXgUWtwc5eGKb54mgSAFaGnfRU557i232q1mFUtxTz6Tb",
+    "decimals":0,
+    "properties":{
+        "Base":"Generic"
+    },
+    "attributes":[
+        {
+            "trait_type":"Base", 
+            "value":"Generic"
+        }
+    ],
+    "token_id":"0"
+}
