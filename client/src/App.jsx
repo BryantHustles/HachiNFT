@@ -13,12 +13,16 @@ import getWeb3 from "./getWeb3";
 import { ethers } from "ethers";
 
 //Components
+import HeaderTabContent from "./components/HeaderTabContent"
+import Header from "./components/Header"
+import Dashboard from "./components/Dashboard"
 import ConnectWallet from "./components/ConnectWallet"
 import TokenTools from "./components/TokenTools"
 import WhitelistTools from "./components/WhitelistTools";
 import WalletTools from "./components/WalletTools";
 import AdminTools from "./components/AdminTools";
-import Dashboard from "./components/Dashboard"
+import DeveloperTools from "./components/DeveloperTools"
+
 
 //Cookies
 const cookies = new Cookies();
@@ -341,27 +345,6 @@ class App extends Component {
     }
   };
 
-  handlechangeTab = (event) => {
-    const target = event.target;
-    const name = target.name;
-
-    // Get all elements with class="tabcontent" and hide them
-    let tabcontent = document.getElementsByClassName("tabcontent");
-    for (let i = 0; i < tabcontent.length; i++) {
-      tabcontent[i].style.display = "none";
-    };
-
-    // Get all elements with class="tablinks" and remove the class "active"
-    let tablinks = document.getElementsByClassName("tablinks");
-    for (let i = 0; i < tablinks.length; i++) {
-      tablinks[i].className = tablinks[i].className.replace(" active", "");
-    };
-
-    // Show the current tab, and add an "active" class to the button that opened the tab
-    document.getElementById(name).style.display = "block";
-    target.className += " active";
-  };
-
   //#############################################################
   //Meta Mask Functions
   //#############################################################
@@ -575,22 +558,6 @@ handleSwitchConnectButton = () => {
 };
 
 //#############################################################
-//Debug Functions
-//#############################################################
-
-handlePrintState = async() => {
-  console.log(this.state);
-};
-
-handlePrintPermissionsCookie = async() => {
-  console.log(cookies.get('Permissions'));
-};
-
-handlePrintState = async() => {
-  console.log(this.state);
-};
-
-//#############################################################
 //HTML Code
 //#############################################################
 
@@ -600,24 +567,15 @@ handlePrintState = async() => {
     }
     return (
       <div className="App">
-        <div className="tab">
-          <button className="tablinks" name="Hachi NFT" id="Hachi NFT Button" onClick={this.handlechangeTab}>Hachi NFT</button>
-          <button className="tablinks" name="Whitelist Tools" id="Whitelist Tools Button" onClick={this.handlechangeTab}>Whitelist Tools</button>
-          <button className="tablinks" name="Wallet Tools" id="Wallet Tools Button" onClick={this.handlechangeTab}>Wallet Tools</button>
-          <button className="tablinks" name="Admin Tools" id="Admin Tools Button" onClick={this.handlechangeTab}>Admin Tools</button>
-        </div>
+        <HeaderTabContent></HeaderTabContent>
         <div>
           <button className="Disconnect-Button" id="disconnectButton" hidden={true} onClick={this.handleDisconnect}>Disconnect</button>
           <ConnectWallet></ConnectWallet>
         </div>
-        <div>
-          <h1>Hachi NFT</h1>
-        </div>
-        <div>
-          <u>Active Account</u>
-          <br></br><br></br>
-          {this.state.activeAddress}
-        </div>
+        <Header
+        activeAddress = {this.state.activeAddress}
+        >
+        </Header>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridGap: 10 }}>
           <Dashboard
           tokenInstance = {this.tokenInstance}
@@ -664,11 +622,11 @@ handlePrintState = async() => {
             </AdminTools>
           </div>
         </div>
-        <div>
-          <button hidden={false} onClick={this.handlePrintState}>Print State</button>
-          <button hidden={false} onClick={this.handlePrintPermissionsCookie}>Print Permissions Cookie</button>
-          <button hidden={false} onClick={this.handlePrintState}>Print State</button>
-        </div>        
+        <DeveloperTools
+        state = {this.state}
+        cookies = {cookies}
+        >
+        </DeveloperTools>       
       </div>
     );
   }
