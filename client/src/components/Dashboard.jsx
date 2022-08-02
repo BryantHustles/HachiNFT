@@ -27,10 +27,11 @@ function Dashboard(props) {
                 </p>
             </div>
             <div>
+            <br></br>
               <h2>Currently Owned Hachis</h2>
-              <br></br>
             </div>
-            <div id="owned hachis" hidden = {true}>              
+            <div id="owned hachis" hidden = {true}>  
+            <br></br>            
             </div>
         </div>      
         </>

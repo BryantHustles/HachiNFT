@@ -11,15 +11,15 @@ function TokenTools(props) {
     let [mintQuantity, mintQuantityInput] = useInput({type:"number", min:"1", max:props.readAddressMintLimit, placeholder:"1", name:"mintQuantity"});
     let [balanceCheckSingleAddress, balanceCheckSingleAddressInput] = useInput({type:"text", placeholder:"0x000...", name:"balanceCheckSingleAddress"});
     let [balanceCheckSingleTokenNumber, balanceCheckSingleTokenNumberInput] = useInput({type:"number", placeholder:"1", min:"1", max:props.readMintLimit, name:"balanceCheckSingleTokenNumber"});
-    let [balanceCheckSingleQuant, setbalanceCheckSingleQuant] = useState(0);
     let [balanceCheckBatchAddress, balanceCheckBatchAddressInput] = useInput({type:"text", placeholder:"0x000..,0x001..,0x002..", name:"balanceCheckBatchAddress"});
     let [balanceCheckBatchTokenNumbers, balanceCheckBatchTokenNumbersInput] = useInput({type:"text", placeholder:"1,200,3405", name:"balanceCheckBatchTokenNumbers"});
-    let [balanceCheckBatchQuant, setbalanceCheckBatchQuant] = useState("");
     let [TransferSingleTo, TransferSingleToInput] = useInput({type:"text", name:"TransferSingleTo", placeholder:"0x000..."});
     let [TransferSingleId, TransferSingleIdInput] =useInput({type:"number", name:"TransferSingleId", min:"1", max:props.readMintLimit, placeholder:"1"});
     let [TransferBatchTo, TransferBatchToInput] = useInput({type:"text", name:"TransferBatchTo", placeholder:"0x000"});
     let [TransferBatchIds, TransferBatchIdsInput] = useInput({type:"text", name:"TransferBatchIds", placeholder:"1,200,3405"});
     let [tokenNumber, tokenNumberInput] =useInput({type:"number", placeholder:"1", min:"1", max:props.readMintLimit, name:"tokenNumber"});
+    let [balanceCheckBatchQuant, setbalanceCheckBatchQuant] = useState("");
+    let [balanceCheckSingleQuant, setbalanceCheckSingleQuant] = useState(0);
     let [tokenURI,settokenURI] = useState("");
 
     //Merkle Tree
@@ -87,38 +87,101 @@ function TokenTools(props) {
         
         //determine Wei to send
         let _cost = props.web3.utils.toWei(props.readMintPrice,"ether") * mintQuantity;
-        
+
+        //Set Params
+        const params = [_sender, _data]
+
         //Get account signature
         const method = "eth_signTypedData_v4"
-        const params = [_sender, _data]
-        
         let _sig = null
         
-        await props.web3.currentProvider.send(
-            {method, params, _sender},
-            function (err, result) {
-            if (err) return console.dir(err);
-            if (result.error) return console.error('ERROR', result);
-            console.log('TYPED SIGNED:' + JSON.stringify(result.result));
-            _sig = result.result
-        });
-        
-        //Mint Hachi
-        let _mintParams = [_ticket.to,_ticket.amounts,_ticket.merkleProof,_sig]
-        
-        await props.tokenInstance.methods.mintHachi(_mintParams).send(
-            {from: _sender, value: _cost},
-            function (err, result) {
-            if (err) return console.dir(err);
-            if (result.error) {
-                result.stopImmediatePropagation()//##########################################
-            }
-            if (result.error) return console.error('ERROR', result);
-        });
+        if (props.connection === 'Metamask') {
+            
+            await props.web3.currentProvider.send(
+                {method, params, _sender},
+                function (err, result) {
+                if (err) return console.dir(err);
+                if (result.error) return console.error('ERROR', result);
+                console.log('TYPED SIGNED:' + JSON.stringify(result.result));
+                _sig = result.result
+            });
+            
+            //Mint Hachi
+            let _mintParams = [_ticket.to,_ticket.amounts,_ticket.merkleProof,_sig]
+            
+            await props.tokenInstance.methods.mintHachi(_mintParams).send(
+                {from: _sender, value: _cost},
+                function (err, result) {
+                if (err) return console.dir(err);
+                if (result.error) {
+                    result.stopImmediatePropagation()//##########################################
+                }
+                if (result.error) return console.error('ERROR', result);
+            });
+        } else if (props.connection === "Wallet-Connect") {
+            props.walletConnector
+            .signTypedData(params)
+            .then((result) => {
+                //Start Timeout Function
+            
+                _sig = result;
+                // Returns signature.
+                console.log(result);
+            }).then(() => {
+                //Mint
+                let _mintParams = [_ticket.to,_ticket.amounts,_ticket.merkleProof,_sig]
+
+                let mintFuncitonAbiEncoded = props.tokenInstance.methods.mintHachi(_mintParams).encodeABI();
+
+                const tx = {
+                    from: props.activeAddress, 
+                    to: props.tokenAddress, 
+                    data: mintFuncitonAbiEncoded,
+                    value: _cost
+                  };
+                // Send transaction
+                props.walletConnector
+                .sendTransaction(tx)
+                .then((result) => {
+                // Returns transaction id (hash)
+                console.log(result);
+                })
+                .catch((error) => {
+                // Error returned when rejected
+                console.error(error);
+                });
+                
+            })
+            .catch((error) => {
+                // Error returned when rejected
+                console.error(error);
+                alert("Mint aborted.");
+                return
+            });  
+        };
     };
     
     async function handleTransferSingle() {
-        await props.tokenInstance.methods.safeTransferFrom(props.activeAddress,TransferSingleTo,TransferSingleId,1,[]).send({from: props.activeAddress});
+        if (props.connection === 'Metamask') {
+            await props.tokenInstance.methods.safeTransferFrom(props.activeAddress,TransferSingleTo,TransferSingleId,1,[]).send({from: props.activeAddress});
+        } else if (props.connection === "Wallet-Connect") {
+            const tx = {
+                from: props.activeAddress, 
+                to: props.tokenAddress, 
+                data: props.tokenInstance.methods.safeTransferFrom(props.activeAddress,TransferSingleTo,TransferSingleId,1,[]).encodeABI()
+              };
+            // Send transaction
+            props.walletConnector
+            .sendTransaction(tx)
+            .then((result) => {
+            // Returns transaction id (hash)
+            console.log(result);
+            })
+            .catch((error) => {
+            // Error returned when rejected
+            console.error(error);
+            });
+        };
     };
     
     async function handleTransferBatch() {
@@ -129,7 +192,26 @@ function TokenTools(props) {
             amounts.push(1);
         };
         
-        await props.tokenInstance.methods.safeBatchTransferFrom(props.activeAddress,TransferBatchTo,iDs,amounts,[]).send({from: props.activeAddress});
+        if (props.connection === 'Metamask') {
+            await props.tokenInstance.methods.safeBatchTransferFrom(props.activeAddress,TransferBatchTo,iDs,amounts,[]).send({from: props.activeAddress});
+        } else if (props.connection === "Wallet-Connect") {
+            const tx = {
+                from: props.activeAddress, 
+                to: props.tokenAddress, 
+                data: props.tokenInstance.methods.safeBatchTransferFrom(props.activeAddress,TransferBatchTo,iDs,amounts,[]).encodeABI()
+              };
+            // Send transaction
+            props.walletConnector
+            .sendTransaction(tx)
+            .then((result) => {
+            // Returns transaction id (hash)
+            console.log(result);
+            })
+            .catch((error) => {
+            // Error returned when rejected
+            console.error(error);
+            });
+        };
     };
     
     //#############################################################
@@ -156,7 +238,7 @@ function TokenTools(props) {
         setbalanceCheckBatchQuant(output);
     }; 
         
-        async function handleGetTokenURI(_token) {
+    async function handleGetTokenURI(_token) {
         let URI  = await props.tokenInstance.methods.uri(_token).call();
         return URI
     };
@@ -176,6 +258,11 @@ function TokenTools(props) {
 
         return [value, input];
     }
+    
+
+    //#############################################################
+    //HTML
+    //#############################################################
 
     return (
         <>

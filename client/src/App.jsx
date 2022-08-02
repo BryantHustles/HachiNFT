@@ -12,6 +12,10 @@ import Whitelist from "./contracts/HachiWhitelist"
 import getWeb3 from "./getWeb3";
 import { ethers } from "ethers";
 
+//Wallet Connect Imports
+import NodeWalletConnect from "@walletconnect/node";
+import WalletConnectQRCodeModal from "@walletconnect/qrcode-modal";
+
 //Components
 import HeaderTabContent from "./components/HeaderTabContent"
 import Header from "./components/Header"
@@ -23,6 +27,21 @@ import WalletTools from "./components/WalletTools";
 import AdminTools from "./components/AdminTools";
 import DeveloperTools from "./components/DeveloperTools"
 
+//Wallet Connect
+// Create connector
+const walletConnector = new NodeWalletConnect(
+  {
+    bridge: "https://bridge.walletconnect.org", // Required
+  },
+  {
+    clientMeta: {
+      description: "WalletConnect NodeJS Client",
+      url: "https://nodejs.org/en/",
+      icons: ["https://nodejs.org/static/images/logo.svg"],
+      name: "WalletConnect",
+    },
+  }
+);
 
 //Cookies
 const cookies = new Cookies();
@@ -40,10 +59,11 @@ class App extends Component {
     connectedAccounts:[],
     activeBalance:null,
     activeAddress:"",
-    ownedTokens:[],
     ownedTokenMap: {},
     permission: false,
-    contractUri: ""
+    contractUri: "",
+    connection: "",
+    wallet: ""
   };
 
   componentDidMount = async () => {
@@ -74,6 +94,8 @@ class App extends Component {
       this.listenForSingleTransfer();
       this.listenForBatchTransfer();
       this.listenForConnectRequest();
+      this.listenForWalletConnectRequest();
+      this.listenForWalletConnectDisconnect();
       
       //Set State
       this.setState({loaded:true},this.handleOnLoad);
@@ -116,18 +138,14 @@ class App extends Component {
   //Determine NFT's Owned by Account Functions
   //#############################################################
 
-  handleGetOwnedTokens = async() => {
+  handleGetOwnedTokens = async(_account) => {
     let _owned = []
     let _transferredFrom = []
-    this.setState({
-      ownedTokens: null,
-      ownedTokenMap: null
-    })
 
     //Get tokens transferrred to Address
     await this.tokenInstance.getPastEvents('TransferBatch', {
       filter: {
-        to: this.state.activeAddress
+        to: _account
       },
       fromBlock: 'earliest',
       toBlock: 'latest'
@@ -140,7 +158,7 @@ class App extends Component {
 
     await this.tokenInstance.getPastEvents('TransferSingle', {
       filter: {
-        to: this.state.activeAddress
+        to: _account
       },
       fromBlock: 'earliest',
       toBlock: 'latest'
@@ -154,7 +172,7 @@ class App extends Component {
     //Get tokens transferred from address
     await this.tokenInstance.getPastEvents('TransferBatch', {
       filter: {
-        from: this.state.activeAddress
+        from: _account
       },
       fromBlock: 'earliest',
       toBlock: 'latest'
@@ -167,7 +185,7 @@ class App extends Component {
 
     await this.tokenInstance.getPastEvents('TransferSingle', {
       filter: {
-        from: this.state.activeAddress
+        from: _account
       },
       fromBlock: 'earliest',
       toBlock: 'latest'
@@ -196,14 +214,19 @@ class App extends Component {
         };
       };
     };
-    this.setState({ownedTokens: _owned})
+
     return _owned
   };
 
-  handleGetOwnedTokenData  = async() => {
+  handleGetOwnedTokenData  = async(_account) => {
+
+    await this.setState({
+      ownedTokenMap: null
+    })
 
     let generic = require("./components/Support_Files/genericMetaData.json");
-    let _ownedTokens = await this.handleGetOwnedTokens();
+    let _ownedTokens = await this.handleGetOwnedTokens(_account);
+
     let _uriMap = {};
 
     for (let i = 0; i<_ownedTokens.length; i++) {
@@ -255,7 +278,7 @@ class App extends Component {
     });
   }
 
-  handleLoadImages = async(_tokenDataObject) => {
+  handleLoadImages = (_tokenDataObject) => {
     let frame = document.getElementById("owned hachis")
 
     while (frame.lastElementChild) {
@@ -291,23 +314,43 @@ class App extends Component {
     let permissions = cookies.get('Permissions');
 
     if (typeof permissions !== 'undefined') {
-      let parentCapability = permissions[0].parentCapability;
-      let permissiontype = permissions[0].caveats[0].type;
-      let address = permissions[0].caveats[0].value[0];
 
-      if (window.ethereum &&
-      parentCapability === "eth_accounts" && 
-      permissiontype === "restrictReturnedAccounts" &&
-      this.web3.utils.isAddress(address)
-      ) {
-        this.handleRequestAccounts();
-        this.handleSwitchConnectButton();
-        } else {
-          cookies.remove("Permissions",{
-          path: "\\"
+      if (permissions.type === "Metamask") {
+        let parentCapability = permissions[0].parentCapability;
+        let permissiontype = permissions[0].caveats[0].type;
+        let address = permissions[0].caveats[0].value[0];
+
+        if (window.ethereum &&
+        parentCapability === "eth_accounts" && 
+        permissiontype === "restrictReturnedAccounts" &&
+        this.web3.utils.isAddress(address)
+        ) {
+          this.handleRequestAccounts()
+          .then(async() => {
+            this.handleSwitchConnectButton();
           });
-        };    
+        };
+      } else if (permissions.type === "Wallet-Connect") {
+        if (this.web3.utils.isAddress(permissions.detail.params[0].accounts[0])){
+          this.handleSwitchConnectButton();
+          this.setState({
+            activeAddress: permissions.detail.params[0].accounts[0],
+            connection: "Wallet-Connect",
+            wallet: permissions.detail.params[0].peerMeta.name
+          });
+          
+          this.handleLoadOwnedTokens(permissions.detail.params[0].accounts[0]);
+        };
+      } else {
+        cookies.remove("Permissions",{
+        path: "\\"
+        });
+      };    
+    } else {
+      if (walletConnector.connected) {
+        walletConnector.killSession();
       };
+    };
 
     this.refreshURI()
     
@@ -315,30 +358,8 @@ class App extends Component {
     document.getElementById("Hachi NFT Button").className += " active";
   };
 
-  handleDisconnect = async() => {
-    let permissions = cookies.get('Permissions');
-
-    if (typeof permissions !== 'undefined') {
-      cookies.remove("Permissions",{
-    });
-  };
-  
-    this.setState({
-      activeAddress: ""
-    });
-  
-    let ownedFrame = document.getElementById("owned hachis");
-    ownedFrame.hidden = true
-  
-    let connectButton = document.getElementById("Connect-Button");
-    connectButton.hidden = false
-  
-    let disconnectButton = document.getElementById("disconnectButton");
-    disconnectButton.hidden = true
-  };
-
-  handleLoadOwnedTokens = async() => {
-    let _tokenData = await this.handleGetOwnedTokenData();
+  handleLoadOwnedTokens = async(_account) => {
+    let _tokenData = await this.handleGetOwnedTokenData(_account);
 
     if (Object.keys(_tokenData).length > 0){
       await this.handleLoadImages(_tokenData);
@@ -360,7 +381,7 @@ class App extends Component {
         const accountsPermission = permissions.find(
           (permission) => permission.parentCapability === 'eth_accounts'
         );
-        cookies.set("Permissions",permissions,{
+        cookies.set("Permissions",{type:"Metamask", detail:permissions},{
           path: "\\",
           maxAge: 86400,
         });
@@ -393,8 +414,11 @@ class App extends Component {
     window.ethereum
     .request({ method: "eth_requestAccounts" })
     .then((res) => {
-      this.accountChangeHandler(res[0]).then(() => {
-        this.handleLoadOwnedTokens();
+      this.accountChangeHandler(res[0]).then(async() => {
+        await this.handleLoadOwnedTokens(res[0]);
+        this.setState({
+          connection: "Metamask"
+        });
       }).catch((error) => {
         if (error.code === 4001) {
           // EIP-1193 userRejectedRequest error
@@ -408,19 +432,14 @@ class App extends Component {
 
   accountChangeHandler = async(account) => {
     // Setting an address data
-    this.setState({
+    await this.setState({
       activeAddress: account
     });
     console.log("Active Account: ", account)
 
     if (this.state.permission) {
       // Setting a balance
-      this.getbalance(account)
-      let _tokenData = await this.handleGetOwnedTokenData();
-
-      if (Object.keys(_tokenData).length > 0){
-        await this.handleLoadImages(_tokenData);
-      };
+      await this.getbalance(account)
     };
   };
 
@@ -443,24 +462,80 @@ class App extends Component {
   };
 
   //#############################################################
+  //Wallet Connect Functions
+  //#############################################################
+
+  handleWalletConnectRequest = async() => {
+
+    // Check if connection is already established
+    if (!walletConnector.connected) {
+      // create new session
+      walletConnector.createSession().then(() => {
+        // get uri for QR Code modal
+        const uri = walletConnector.uri;
+        // display QR Code modal
+        WalletConnectQRCodeModal.open(
+          uri,
+          () => {
+            console.log("QR Code Modal closed");
+          },
+          true // isNode = true
+        );
+      });
+    } else {
+        console.log("Connection is already present.")
+    };
+  };
+
+  handleCloseQRModal = () => {
+    // Close QR Code Modal
+    WalletConnectQRCodeModal.close(
+    true // isNode = true
+    );
+  }
+
+  handleWalletConnect = async(_payload) => {
+    if (_payload.params[0].chainId === networkId) { // Change this logic later to ====
+      this.setState({
+        activeAddress: _payload.params[0].accounts[0],
+        connection: "Wallet-Connect",
+        wallet: _payload.params[0].peerMeta.name
+      });
+      cookies.set("Permissions",{type:"Wallet-Connect", detail:_payload},{
+        path: "\\",
+        maxAge: 864000,
+      });
+      this.handleCloseQRModal();
+      this.handleSwitchConnectButton();
+      this.handleLoadOwnedTokens(_payload.params[0].accounts[0]);
+    } else {
+      console.error("Connection is using Chain ID " + _payload.params[0].chainId + " which is not the correct.");
+      alert("Please use the correct Chain ID when connecting");
+      this.handleCloseQRModal();
+    };
+  };
+
+
+  //#############################################################
   //Event Listener Functions
   //#############################################################
 
-  listenForAccountChanged = async() => {
-    window.ethereum.on('accountsChanged', (accounts) => {
-      //Use a cookiw to keep account present
-      window.location.reload();
+  //General Listners
+
+  listenForConnectRequest = async() => {
+    await document.addEventListener("Connect-Wallet-Request", async(event) => {
+      event.stopImmediatePropagation();
+
+      let detail = event.detail;
+      if (detail === "Metamask") {
+        this.handleConnectMetaMask()
+      } else if (detail === "Wallet-Connect") {
+        this.handleWalletConnectRequest();
+      };
     });
-  };
-  
-  listenForChainChanged = async() => {
-    window.ethereum.on('chainChanged', (chainId) => {
-      // Handle the new chain.
-      // Correctly handling chain changes can be complicated.
-      // We recommend reloading the page unless you have good reason not to.
-      window.location.reload();
-   });
-  };
+  };  
+
+  //Contract Listensers
 
   listenForMint = async() => {
     this.tokenInstance.events.Mint({
@@ -529,18 +604,69 @@ class App extends Component {
     });
   };
 
-  listenForConnectRequest = async() => {
-    await document.addEventListener("Connect-Wallet-Request", async(event) => {
-      event.stopImmediatePropagation();
+  //Metamask Listeners
 
-      let detail = event.detail;
-      if (detail === "Metamask") {
-        this.handleConnectMetaMask()
-      } else if (detail === "Wallet-Connect") {
+  listenForAccountChanged = async() => {
+    window.ethereum.on('accountsChanged', (accounts) => {
+      //Use a cookiw to keep account present
+      window.location.reload();
+    });
+  };
+  
+  listenForChainChanged = async() => {
+    window.ethereum.on('chainChanged', (chainId) => {
+      // Handle the new chain.
+      // Correctly handling chain changes can be complicated.
+      // We recommend reloading the page unless you have good reason not to.
+      window.location.reload();
+   });
+  };
 
+  //Wallet Connect Listeners
+
+  listenForWalletConnectRequest = async() => {
+    // Subscribe to connection events
+    walletConnector.on("connect", (error, payload) => {
+      if (error) {
+        throw error;
+      } else if (payload != null) {
+        console.log(payload);
+        this.handleWalletConnect(payload);
       };
     });
-  };  
+  };
+
+  listenForWalletConnectDisconnect = async() => {
+    walletConnector.on("disconnect", (error, payload) => {
+      if (error) {
+        throw error;
+      } else {
+        console.log(payload);
+
+        let permissions = cookies.get('Permissions');
+
+        if (typeof permissions !== 'undefined') {
+          cookies.remove("Permissions",{
+          });
+        };
+
+        this.setState({
+          activeAddress: "",
+          connection: "",
+          wallet: ""
+        });
+
+        let ownedFrame = document.getElementById("owned hachis");
+        ownedFrame.hidden = true
+
+        let connectButton = document.getElementById("Connect-Button");
+        connectButton.hidden = false
+
+        let disconnectButton = document.getElementById("disconnectButton");
+        disconnectButton.hidden = true
+      };
+    });
+  };
 
 //#############################################################
 //Handle Connect/ Disconnect Button
@@ -555,6 +681,36 @@ handleSwitchConnectButton = () => {
 
   let popup = document.getElementById("Connect-Pop-Up");
   popup.className = "global-modal";
+};
+
+handleDisconnect = async() => {
+
+  let permissions = cookies.get('Permissions');
+  if (this.state.connection === "Metamask") {
+
+  } else if (this.state.connection === "Wallet-Connect") {
+      walletConnector.killSession();
+  };
+
+  if (typeof permissions !== 'undefined') {
+    cookies.remove("Permissions",{
+    });
+  };
+
+  this.setState({
+    activeAddress: "",
+    connection: "",
+    wallet: ""
+  });
+
+  let ownedFrame = document.getElementById("owned hachis");
+  ownedFrame.hidden = true
+
+  let connectButton = document.getElementById("Connect-Button");
+  connectButton.hidden = false
+
+  let disconnectButton = document.getElementById("disconnectButton");
+  disconnectButton.hidden = true
 };
 
 //#############################################################
@@ -591,8 +747,10 @@ handleSwitchConnectButton = () => {
             readMintPrice = {this.state.readMintPrice}
             tokenAddress = {this.tokenInstance.options.address}
             activeAddress = {this.state.activeAddress}
+            connection = {this.state.connection}
             tokenInstance = {this.tokenInstance}
             web3 = {this.web3}
+            walletConnector = {walletConnector}
             > 
             </TokenTools>
           </div>
