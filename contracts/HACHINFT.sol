@@ -67,7 +67,7 @@ contract HACHINFT is
      */
     struct HachiTicket {
         address to;
-        uint256[] amounts;
+        uint[] amounts;
         bytes32[] merkleProof;
         bytes signature;
     }
